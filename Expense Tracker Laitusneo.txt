@@ -1,0 +1,88 @@
+Expense Tracker Updates PHASE 1 
+------------------------------------------------
+
+1. Expenses should be connected to transactions -- DONE
+2. Invoice should be In & Out (Create sell invoice and create in invoice) -- DONE
+3. dashboard should reflect transactions of each and every thing (invoice, expenses) -- DONE
+4. over due amount should be two type incoming and outgoing -- DONE
+5. bank or cash source in transaction & expenses -- DONE
+6. Search Icon implementation -- DONE
+7. Make the Export button down -- DONE
+8. Modify the UI -- DONE
+9. Connect transactions to invoice -- DONE
+10. Invoice number update -- DONE
+11. Invoice Card update amounts --DONE
+12. bank details template in settings -- DONE
+13. generate unique transaction id -- DONE
+14. transaction purpose must be updated for expense -- DONE
+15. Bank name in Payment method update -- DONE
+16. regular to completed in expense -- DONE
+17. Payment receipt of every transactions -- DONE
+18  section of invoice / cash -- DONE
+19. Format will be changed to LNTS001, LNTP001 for invoice number -- DONE
+20. Net balance cash or bank in card -- DONE
+21. Individual or client selection in invoice -- DONE
+22. Expenses Form Invoice/ without Invoice -- DONE
+23. Expenses Invoice should be connected to Invoice tab history -- DONE
+24. Download option of that invoice from expenses -- DONE
+25. Current balance account balance hover -- DONE
+26. Filter bank / cash -- DONE
+27. Export as pdf/csv in transactions & expenses & invoices -- DONE
+28. Mass selection option in both transactions and invoices -- DONE
+29. Transaction online -- bank fix input field -- DONE
+30. Filter in invoice section of Date range -- DONE
+31. Deletion feature from expenses to invoice -- DONE
+32. Approval section for transactions of sub users and create sub users section -- DONE
+33. Approval pop up BANK selection & UTR then after approval
+ 
+
+SUB USER Features
+-----------------
+1. Current balance will be blur -- DONE
+2. Data must show of that particular user in the cards -- DONE
+3. request transaction features -- DONE
+4. status (approved, rejected, processing) -- DONE
+5. data must go to the client -- DONE
+6. Remove purpose and category -- DONE
+7. Connecting the expenses with transactions and invoices same functionality -- DONE
+8. create in out invoices with same template -- DONE
+9. UI modification -- DONE
+10. The bank details will be shown in Sub user management -- DONE
+11. Bank Account - To my Own account, To vendor account -- DONE
+12. To vendor account - Fill up the details -- DONE
+13. The bank details will be shown in Sub user management -- DONE
+14. UTR in transaction details form
+15. No approval request for credit in
+16. OUT Invoice approval 
+17. payment request will be generated in expenses section and there after transaction page
+18. After approval money will be deducted and shown as approved
+
+
+LOGIN CREDENTIALS:
+------------------
+SUB202509061026385359
+VbXjmCnXnph9
+
+SUB202509101004105046
+EsJiJZOkeGG6
+
+
+
+Prompts:
+--------
+
+Now you have to start another section of this project. I want to build a new section in this From where Sub users can be made by generating the id and password from the application. 
+1. You need to make a drop down option for Client(main user), Sub User, Admin in login.
+2. You need to generate the password and id from the Sub users section in the application. The sub user section should come beside the invoices section. Keep the UI same. Don't change. 
+3. Now In the sub users, when sub user logged in, they can see a dashboard in which there will be only net credit, net debit, Invoice revenue In & Out of that sub user. No need of showing current balance.
+4. There will be expenses section, transactions section and Invoice section with functionality of same as like the main users. Now one thing will change that for every section, when the sub user want to add a expense or Transaction, there will be option of request expense, request transaction instead of Save expense, save transaction and also there will be a column where it will display ACCEPTED, REJECTED, PROCESSING. 
+5. Now when sub user request a transaction or expense, the request will go to main user who created Sub user and they can accept, reject. If they accept then that particular transaction/ expense will be added to the main users account with the name of the sub user. 
+
+
+Fixes need to be done:
+----------------------
+
+1. Expense deletion of Sub user, balance update of the main user
+2. Invoice section OUT part approval -- DONE
+3. Invoice balance fixture
+

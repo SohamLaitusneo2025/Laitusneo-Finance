@@ -1,0 +1,1124 @@
+{% extends "base.html" %}
+
+{% block title %}Expenses{% endblock %}
+
+{% block content %}
+<style>
+/* Beautiful Table Styling - Maintaining Original UI */
+#expensesTable {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#expensesTable th,
+#expensesTable td {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+    text-align: left;
+}
+
+#expensesTable thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#expensesTable tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+#expensesTable tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+#expensesTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Column width management - Optimized for single page */
+#expensesTable th:nth-child(1), #expensesTable td:nth-child(1) { width: 4%; } /* Checkbox */
+#expensesTable th:nth-child(2), #expensesTable td:nth-child(2) { width: 14%; } /* Unique ID */
+#expensesTable th:nth-child(3), #expensesTable td:nth-child(3) { width: 10%; } /* Amount */
+#expensesTable th:nth-child(4), #expensesTable td:nth-child(4) { width: 9%; } /* Payment */
+#expensesTable th:nth-child(5), #expensesTable td:nth-child(5) { width: 11%; } /* Payment Type */
+#expensesTable th:nth-child(6), #expensesTable td:nth-child(6) { width: 9%; } /* Type */
+#expensesTable th:nth-child(7), #expensesTable td:nth-child(7) { width: 9%; } /* Date */
+#expensesTable th:nth-child(8), #expensesTable td:nth-child(8) { width: 7%; } /* Bill */
+#expensesTable th:nth-child(9), #expensesTable td:nth-child(9) { width: 18%; } /* Bank Account */
+#expensesTable th:nth-child(10), #expensesTable td:nth-child(10) { width: 9%; } /* Actions */
+
+/* Better action buttons - Fixed overflow */
+#expensesTable .btn-group-sm {
+    display: flex;
+    gap: 1px;
+    flex-wrap: nowrap;
+    width: 100%;
+    justify-content: center;
+}
+
+#expensesTable .btn-group-sm .btn {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    border-radius: 3px;
+    min-width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    max-width: 30px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    #expensesTable th, #expensesTable td {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+    }
+    
+    #expensesTable .btn-group-sm .btn {
+        padding: 0.25rem 0.3rem;
+        font-size: 0.7rem;
+        min-width: 26px;
+        height: 26px;
+        max-width: 28px;
+    }
+}
+
+@media (max-width: 768px) {
+    #expensesTable th, #expensesTable td {
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+    
+    #expensesTable .btn-group-sm .btn {
+        padding: 0.2rem 0.25rem;
+        font-size: 0.65rem;
+        min-width: 22px;
+        height: 22px;
+        max-width: 24px;
+    }
+}
+</style>
+
+<div class="professional-dashboard">
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="page-header">
+                    <!-- Removed title and subtitle -->
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-outline-secondary search-toggle-btn me-2" id="searchToggleBtn" onclick="toggleSearch()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="btn btn-primary add-btn" data-bs-toggle="modal" data-bs-target="#expenseModal">
+                        <i class="fas fa-plus me-2"></i>Add Expense
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section" id="filtersSection" style="display: none;">
+        <div class="container-fluid">
+            <div class="filter-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-filter me-2"></i>Filter Options
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label for="filterUniqueId" class="form-label">Unique ID</label>
+                            <input type="text" class="form-control" id="filterUniqueId" placeholder="Search by ID..." onkeyup="filterExpenses()">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterType" class="form-label">Type</label>
+                            <select class="form-select" id="filterType" onchange="filterExpenses()">
+                                <option value="">All Types</option>
+                                <option value="completed">Completed</option>
+                                <option value="upcoming">Upcoming</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterCategory" class="form-label">Category</label>
+                            <input type="text" class="form-control" id="filterCategory" placeholder="Category..." onkeyup="filterExpenses()">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterBankAccount" class="form-label">Bank Account</label>
+                            <select class="form-select" id="filterBankAccount" onchange="filterExpenses()">
+                                <option value="">All Accounts</option>
+                                <option value="cash">Cash</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterDateFrom" class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="filterDateFrom" onchange="filterExpenses()">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterDateTo" class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="filterDateTo" onchange="filterExpenses()">
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary w-100" onclick="clearExpenseFilters()">
+                                <i class="fas fa-times me-1"></i>Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expenses Table Section -->
+    <div class="table-section">
+        <div class="container-fluid">
+            <div class="table-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-list me-2"></i>All Expenses
+                        <span class="badge bg-primary ms-2" id="expenseCount">0</span>
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-success btn-sm" id="bulkExportExpenses" style="display: none;" onclick="bulkExportExpenses()">
+                            <i class="fas fa-file-pdf me-1"></i>Export Selected (<span id="selectedExpensesCount">0</span>)
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" id="bulkDeleteExpenses" style="display: none;" onclick="bulkDeleteExpenses()">
+                            <i class="fas fa-trash me-1"></i>Delete Selected (<span id="selectedExpensesDeleteCount">0</span>)
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="detail-table" id="expensesTable">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllExpenses" class="form-check-input" title="Select All">
+                                    </th>
+                                    <th>Unique ID</th>
+                                    <th>Amount</th>
+                                    <th>Payment</th>
+                                    <th>Payment Type</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th>Bill</th>
+                                    <th>Bank Account</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="noExpenses" style="display: none;">
+                        <div class="empty-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <h4>No Expenses Found</h4>
+                        <p>Start tracking your expenses by adding your first expense record.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#expenseModal">
+                            <i class="fas fa-plus me-2"></i>Add First Expense
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Expense Modal -->
+<div class="modal fade" id="expenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="expenseModalTitle">
+                    <i class="fas fa-plus me-2"></i>Add Expense
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="expenseForm" enctype="multipart/form-data">
+                    <input type="hidden" id="expenseId" name="expense_id">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="expensePurpose" class="form-label">Purpose of Expense *</label>
+                            <input type="text" class="form-control" id="expensePurpose" name="purpose" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expenseAmount" class="form-label">Amount *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" id="expenseAmount" name="amount" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expensePaymentMethod" class="form-label">Payment Method *</label>
+                            <select class="form-select" id="expensePaymentMethod" name="payment_method" required onchange="toggleBankSelection()">
+                                <option value="cash">Cash</option>
+                                <option value="online">Online</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expensePaymentType" class="form-label">Payment Type *</label>
+                            <select class="form-select" id="expensePaymentType" name="payment_type" required onchange="toggleInvoiceRequirement()">
+                                <option value="">Select Payment Type</option>
+                                <option value="invoice">Invoice</option>
+                                <option value="non_invoice">Non Invoice</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6" id="bankSelectionDiv" style="display: none;">
+                            <label for="expenseBankAccount" class="form-label">Bank Account *</label>
+                            <select class="form-select" id="expenseBankAccount" name="bank_account_id">
+                                <option value="">Choose a bank account...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expenseCategory" class="form-label">Category</label>
+                            <input type="text" class="form-control" id="expenseCategory" name="category" list="categoryOptions">
+                            <datalist id="categoryOptions">
+                                <option value="Office Supplies">
+                                <option value="Travel">
+                                <option value="Food & Dining">
+                                <option value="Utilities">
+                                <option value="Marketing">
+                                <option value="Equipment">
+                                <option value="Software">
+                                <option value="Other">
+                            </datalist>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expenseType" class="form-label">Type</label>
+                            <select class="form-select" id="expenseType" name="expense_type">
+                                <option value="completed">Completed</option>
+                                <option value="upcoming">Upcoming</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expenseDate" class="form-label">Date *</label>
+                            <input type="date" class="form-control" id="expenseDate" name="expense_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="billFile" class="form-label">Bill/Receipt <span id="billRequired" style="display: none; color: red;">*</span></label>
+                            <input type="file" class="form-control" id="billFile" name="bill_file" accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx">
+                            <div class="form-text" id="billHelpText">Optional. Supported formats: PDF, Images, Word documents</div>
+                            <div class="file-preview" id="filePreview" style="display: none;"></div>
+                        </div>
+                        <div class="col-12">
+                            <label for="expenseDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="expenseDescription" name="description" rows="3" placeholder="Additional details about the expense..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveExpense()">
+                    <i class="fas fa-save me-1"></i>Save Expense
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Expense Modal -->
+<div class="modal fade" id="viewExpenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Expense Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="expenseDetails">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let expenses = [];
+let filteredExpenses = [];
+let editingExpenseId = null;
+
+// Bank Management for Expenses
+let userBanks = [];
+
+// Check authentication status
+async function checkAuthentication() {
+    try {
+        const response = await fetch('/api/auth/check');
+        if (response.ok) {
+            const data = await response.json();
+            return data.authenticated;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error checking authentication:', error);
+        return false;
+    }
+}
+
+// Load expenses on page load
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Check authentication first
+        const isAuthenticated = await checkAuthentication();
+        if (!isAuthenticated) {
+            console.log('User not authenticated - redirecting to login');
+            ExpenseTracker.showNotification('Please log in to access this page.', 'warning');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
+            return;
+        }
+        
+        // Set today's date as default
+        const expenseDateField = document.getElementById('expenseDate');
+        if (expenseDateField) {
+            expenseDateField.valueAsDate = new Date();
+        }
+        
+        // Load banks first, then expenses to ensure bank names are available
+        await loadUserBanks();
+        await loadExpenses();
+        
+        // Only reset form when adding new expense, not when editing
+        const expenseModal = document.getElementById('expenseModal');
+        if (expenseModal) {
+            expenseModal.addEventListener('show.bs.modal', function(event) {
+                // Check if this is triggered by edit button
+                if (!editingExpenseId) {
+                    resetExpenseForm();
+                }
+            });
+        }
+        
+        // Select all functionality
+        const selectAllCheckbox = document.getElementById('selectAllExpenses');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                try {
+                    const checkboxes = document.querySelectorAll('.expense-checkbox');
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateBulkButtons();
+                    console.log(`Select all: ${this.checked ? 'checked' : 'unchecked'}`);
+                } catch (error) {
+                    console.error('Error in select all:', error);
+                    ExpenseTracker.showNotification('Error in select all functionality: ' + error.message, 'error');
+                }
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error initializing expenses page:', error);
+        ExpenseTracker.showNotification('Error initializing expenses page: ' + error.message, 'error');
+    }
+});
+
+function resetExpenseForm() {
+    document.getElementById('expenseForm').reset();
+    document.getElementById('expenseId').value = '';
+    document.getElementById('expenseDate').valueAsDate = new Date();
+    document.getElementById('expensePaymentMethod').value = 'cash';
+    document.getElementById('expensePaymentType').value = 'non_invoice';
+    document.getElementById('expenseType').value = 'completed';
+    document.getElementById('bankSelectionDiv').style.display = 'none';
+    document.getElementById('expenseBankAccount').value = '';
+    document.getElementById('expenseBankAccount').required = false;
+    editingExpenseId = null;
+}
+
+async function loadUserBanks() {
+    try {
+        const response = await fetch('/api/user-banks');
+        
+        // Check if response is HTML (login page) instead of JSON
+        if (response.headers.get('content-type') && response.headers.get('content-type').includes('text/html')) {
+            console.log('Authentication required for user banks - redirecting to login');
+            window.location.href = '/login';
+            return;
+        }
+        
+        if (response.ok) {
+            userBanks = await response.json();
+            populateExpenseBankDropdown();
+            
+            // Re-render expenses table to update bank names
+            if (expenses && expenses.length > 0) {
+                renderExpensesTable();
+            }
+        } else if (response.status === 401) {
+            console.log('Authentication required for user banks - redirecting to login');
+            window.location.href = '/login';
+            return;
+        } else {
+            console.error('Failed to load user banks');
+            ExpenseTracker.showNotification('Failed to load bank accounts', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading user banks:', error);
+        
+        // Check if it's an authentication error
+        if (error.message && error.message.includes('401')) {
+            console.log('Authentication required for user banks - redirecting to login');
+            window.location.href = '/login';
+            return;
+        }
+        
+        ExpenseTracker.showNotification('Error loading bank accounts: ' + error.message, 'error');
+    }
+}
+
+function populateExpenseBankDropdown() {
+    const dropdown = document.getElementById('expenseBankAccount');
+    dropdown.innerHTML = '<option value="">Choose a bank account...</option>';
+    
+    userBanks.forEach(bank => {
+        const option = document.createElement('option');
+        option.value = bank.id;
+        option.textContent = `${bank.bank_name} - ${bank.account_number}`;
+        dropdown.appendChild(option);
+    });
+    
+    // Also populate the filter bank account dropdown
+    populateFilterBankDropdown();
+}
+
+function populateFilterBankDropdown() {
+    const filterDropdown = document.getElementById('filterBankAccount');
+    if (!filterDropdown) return;
+    
+    filterDropdown.innerHTML = '<option value="">All Accounts</option><option value="cash">Cash</option>';
+    
+    userBanks.forEach(bank => {
+        const option = document.createElement('option');
+        option.value = bank.bank_name;
+        option.textContent = `${bank.bank_name} - ${bank.account_number}`;
+        filterDropdown.appendChild(option);
+    });
+}
+
+function toggleBankSelection() {
+    const paymentMethod = document.getElementById('expensePaymentMethod').value;
+    const bankSelectionDiv = document.getElementById('bankSelectionDiv');
+    const bankAccountSelect = document.getElementById('expenseBankAccount');
+    
+    if (paymentMethod === 'online') {
+        bankSelectionDiv.style.display = 'block';
+        bankAccountSelect.required = true;
+    } else {
+        bankSelectionDiv.style.display = 'none';
+        bankAccountSelect.required = false;
+        bankAccountSelect.value = '';
+        // Clear the bank account selection when switching to cash
+        bankAccountSelect.selectedIndex = 0;
+    }
+}
+
+function toggleInvoiceRequirement() {
+    const paymentType = document.getElementById('expensePaymentType').value;
+    const billFile = document.getElementById('billFile');
+    const billRequired = document.getElementById('billRequired');
+    const billHelpText = document.getElementById('billHelpText');
+    
+    if (paymentType === 'invoice') {
+        billFile.required = true;
+        billRequired.style.display = 'inline';
+        billHelpText.textContent = 'Required for invoice expenses. Supported formats: PDF, Images, Word documents';
+        billHelpText.style.color = '#dc3545';
+    } else {
+        billFile.required = false;
+        billRequired.style.display = 'none';
+        billHelpText.textContent = 'Optional. Supported formats: PDF, Images, Word documents';
+        billHelpText.style.color = '#6c757d';
+    }
+}
+
+function getBankName(bankAccountId, bankData) {
+    if (!bankAccountId) return '-';
+    
+    // If bank data is provided directly from API response, use it
+    if (bankData && bankData.bank_name) {
+        return `${bankData.bank_name} - ${bankData.account_number}`;
+    }
+    
+    // Fallback to userBanks array lookup
+    const bank = userBanks.find(b => b.id == bankAccountId);
+    if (bank) {
+        return `${bank.bank_name} - ${bank.account_number}`;
+    }
+    
+    // If bank not found and userBanks is empty, try to load banks
+    if (userBanks.length === 0) {
+        loadUserBanks().then(() => {
+            // Re-render the table after banks are loaded
+            renderExpensesTable();
+        });
+        return 'Loading...';
+    }
+    
+    return 'Unknown Bank';
+}
+
+async function loadExpenses() {
+    try {
+        const response = await axios.get('/api/expenses');
+        
+        // Check if response is HTML (login page) instead of JSON
+        if (response.headers['content-type'] && response.headers['content-type'].includes('text/html')) {
+            console.log('Authentication required - redirecting to login');
+            window.location.href = '/login';
+            return;
+        }
+        
+        expenses = response.data;
+        filteredExpenses = [...expenses];
+        renderExpensesTable();
+    } catch (error) {
+        console.error('Error loading expenses:', error);
+        
+        // Check if it's an authentication error
+        if (error.response && error.response.status === 401) {
+            console.log('Authentication required - redirecting to login');
+            window.location.href = '/login';
+            return;
+        }
+        
+        // Check if response is HTML (login page) instead of JSON
+        if (error.response && error.response.headers['content-type'] && 
+            error.response.headers['content-type'].includes('text/html')) {
+            console.log('Authentication required - redirecting to login');
+            window.location.href = '/login';
+            return;
+        }
+        
+        ExpenseTracker.showNotification('Error loading expenses: ' + (error.response?.data?.error || error.message), 'error');
+    }
+}
+
+function renderExpensesTable() {
+    try {
+        const tbody = document.querySelector('#expensesTable tbody');
+        const noExpensesDiv = document.getElementById('noExpenses');
+        const countBadge = document.getElementById('expenseCount');
+        
+        if (!tbody || !noExpensesDiv || !countBadge) {
+            console.error('Required elements not found for renderExpensesTable');
+            return;
+        }
+        
+        countBadge.textContent = filteredExpenses.length;
+    
+    if (filteredExpenses.length === 0) {
+        document.getElementById('expensesTable').style.display = 'none';
+        noExpensesDiv.style.display = 'block';
+        return;
+    }
+    
+    document.getElementById('expensesTable').style.display = 'table';
+    noExpensesDiv.style.display = 'none';
+    
+    tbody.innerHTML = filteredExpenses.map(expense => {
+        const date = new Date(expense.expense_date).toLocaleDateString();
+        const typeClass = expense.expense_type === 'upcoming' ? 'warning' : 'primary';
+        const billContent = expense.bill_file ? 
+            `<a href="/uploads/${expense.bill_file}" target="_blank" class="text-success" title="View attachment">
+                <i class="fas fa-paperclip"></i> View
+            </a>` : 
+            '<i class="fas fa-paperclip text-muted" title="No attachment"></i>';
+            
+        return `
+            <tr>
+                <td>
+                    <input type="checkbox" class="form-check-input expense-checkbox" value="${expense.id}" onchange="updateBulkButtons()">
+                </td>
+                <td>
+                    <code class="text-primary">${expense.unique_id || 'N/A'}</code>
+                </td>
+                <td><strong>${ExpenseTracker.formatCurrency(expense.amount)}</strong></td>
+                <td><span class="badge bg-${expense.payment_method === 'online' ? 'success' : 'secondary'}">${expense.payment_method || 'cash'}</span></td>
+                <td><span class="badge bg-${expense.payment_type === 'invoice' ? 'info' : 'warning'}">${expense.payment_type || 'N/A'}</span></td>
+                <td><span class="badge bg-${typeClass}">${expense.expense_type}</span></td>
+                <td>${date}</td>
+                <td>${billContent}</td>
+                <td>${expense.bank_account_id ? getBankName(expense.bank_account_id, expense) : '-'}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-info" onclick="viewExpense(${expense.id})" title="View">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="editExpense(${expense.id})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-success" onclick="generateReceipt('expense', ${expense.id})" title="Generate Receipt">
+                            <i class="fas fa-receipt"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="deleteExpense(${expense.id})" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    } catch (error) {
+        console.error('Error in renderExpensesTable:', error);
+        ExpenseTracker.showNotification('Error rendering expenses table: ' + error.message, 'error');
+    }
+}
+
+function filterExpenses() {
+    const uniqueId = document.getElementById('filterUniqueId').value.toLowerCase();
+    const type = document.getElementById('filterType').value.toLowerCase();
+    const category = document.getElementById('filterCategory').value.toLowerCase();
+    const bankAccount = document.getElementById('filterBankAccount').value.toLowerCase();
+    const dateFrom = document.getElementById('filterDateFrom').value;
+    const dateTo = document.getElementById('filterDateTo').value;
+    
+    filteredExpenses = expenses.filter(expense => {
+        const matchesUniqueId = !uniqueId || (expense.unique_id && expense.unique_id.toLowerCase().includes(uniqueId));
+        const matchesType = !type || expense.expense_type.toLowerCase().includes(type);
+        const matchesCategory = !category || (expense.category && expense.category.toLowerCase().includes(category));
+        
+        // Bank account filter logic - Fixed
+        let matchesBankAccount = true;
+        if (bankAccount) {
+            if (bankAccount === 'cash') {
+                // Cash transactions: no bank_name or bank_name is 'Cash'
+                matchesBankAccount = !expense.bank_name || expense.bank_name === 'Cash' || expense.bank_name === '';
+            } else {
+                // Bank transactions: match by bank name
+                matchesBankAccount = expense.bank_name && expense.bank_name.toLowerCase().includes(bankAccount);
+            }
+            // Debug logging
+            if (bankAccount !== 'cash' && expense.bank_name) {
+                console.log(`Filtering by bank: ${bankAccount}, Expense bank: ${expense.bank_name}, Match: ${matchesBankAccount}`);
+            }
+        }
+        
+        let matchesDateRange = true;
+        if (dateFrom || dateTo) {
+            const expenseDate = new Date(expense.expense_date);
+            if (dateFrom && expenseDate < new Date(dateFrom)) matchesDateRange = false;
+            if (dateTo && expenseDate > new Date(dateTo)) matchesDateRange = false;
+        }
+        
+        return matchesUniqueId && matchesType && matchesCategory && matchesBankAccount && matchesDateRange;
+    });
+    
+    renderExpensesTable();
+}
+
+function clearExpenseFilters() {
+    document.getElementById('filterUniqueId').value = '';
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterCategory').value = '';
+    document.getElementById('filterBankAccount').value = '';
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value = '';
+    filteredExpenses = [...expenses];
+    renderExpensesTable();
+}
+
+function generateReceipt(transactionType, transactionId) {
+    try {
+        // Open receipt in new window
+        const receiptUrl = `/api/receipt/${transactionType}/${transactionId}`;
+        window.open(receiptUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+    } catch (error) {
+        console.error('Error generating receipt:', error);
+        ExpenseTracker.showNotification('Error generating receipt: ' + error.message, 'error');
+    }
+}
+
+async function saveExpense() {
+    const form = document.getElementById('expenseForm');
+    const formData = new FormData(form);
+    
+    // Validate bank account selection for online payments
+    const paymentMethod = formData.get('payment_method');
+    const bankAccountId = formData.get('bank_account_id');
+    
+    console.log('Payment Method:', paymentMethod);
+    console.log('Bank Account ID:', bankAccountId);
+    console.log('Form Data:', Object.fromEntries(formData));
+    
+    if (paymentMethod === 'online' && !bankAccountId) {
+        ExpenseTracker.showNotification('Please select a bank account for online payments.', 'error');
+        return;
+    }
+    
+    try {
+        let response;
+        if (editingExpenseId) {
+            // For updates, we need to use JSON since file upload isn't supported in PUT
+            const data = {
+                purpose: formData.get('purpose'),
+                description: formData.get('description'),
+                amount: formData.get('amount'),
+                category: formData.get('category'),
+                payment_method: formData.get('payment_method'),
+                payment_type: formData.get('payment_type'),
+                expense_type: formData.get('expense_type'),
+                expense_date: formData.get('expense_date'),
+                bank_account_id: formData.get('bank_account_id')
+            };
+            response = await axios.put(`/api/expenses/${editingExpenseId}`, data);
+        } else {
+            response = await axios.post('/api/expenses', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+        }
+        
+        if (response.data.success) {
+            const wasEditing = editingExpenseId !== null;
+            const modal = bootstrap.Modal.getInstance(document.getElementById('expenseModal'));
+            modal.hide();
+            
+            // Reset form
+            document.getElementById('expenseForm').reset();
+            editingExpenseId = null;
+            
+            await loadExpenses();
+            
+            ExpenseTracker.showNotification(`Expense ${wasEditing ? 'updated' : 'added'} successfully!`, 'success');
+        } else {
+            ExpenseTracker.showNotification('Failed to save expense: ' + (response.data.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('Error saving expense:', error);
+        ExpenseTracker.showNotification('Error saving expense: ' + (error.response?.data?.error || error.message), 'error');
+    }
+}
+
+function editExpense(id) {
+    const expense = expenses.find(e => e.id === id);
+    if (!expense) return;
+    
+    editingExpenseId = id;
+    document.getElementById('expenseModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Expense';
+    
+    // Clear form first to ensure clean state
+    document.getElementById('expenseForm').reset();
+    
+    // Populate form with existing data
+    document.getElementById('expenseId').value = expense.id;
+    document.getElementById('expensePurpose').value = expense.title || expense.purpose;
+    document.getElementById('expenseAmount').value = expense.amount;
+    document.getElementById('expenseCategory').value = expense.category || '';
+    document.getElementById('expensePaymentMethod').value = expense.payment_method || 'cash';
+    document.getElementById('expensePaymentType').value = expense.payment_type || 'non_invoice';
+    document.getElementById('expenseType').value = expense.expense_type || 'completed';
+    document.getElementById('expenseDate').value = expense.expense_date;
+    document.getElementById('expenseDescription').value = expense.description || '';
+    
+    // Handle bank account selection
+    toggleBankSelection();
+    if (expense.bank_account_id) {
+        document.getElementById('expenseBankAccount').value = expense.bank_account_id;
+    } else {
+        document.getElementById('expenseBankAccount').value = '';
+    }
+    
+    // Handle invoice requirement
+    toggleInvoiceRequirement();
+    
+    const modal = new bootstrap.Modal(document.getElementById('expenseModal'));
+    modal.show();
+}
+
+function viewExpense(id) {
+    try {
+        console.log('Viewing expense with ID:', id);
+        console.log('Available expenses:', expenses);
+        
+        const expense = expenses.find(e => e.id === parseInt(id));
+        if (!expense) {
+            console.error('Expense not found with ID:', id);
+            ExpenseTracker.showNotification('Expense not found!', 'error');
+            return;
+        }
+        
+        console.log('Found expense:', expense);
+        
+        const detailsDiv = document.getElementById('expenseDetails');
+        if (!detailsDiv) {
+            console.error('expenseDetails element not found');
+            ExpenseTracker.showNotification('Error loading expense details!', 'error');
+            return;
+        }
+        
+        const date = new Date(expense.expense_date).toLocaleDateString();
+        const typeClass = expense.expense_type === 'upcoming' ? 'warning' : 'primary';
+        
+        detailsDiv.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Purpose:</strong></label>
+                    <p class="form-control-plaintext">${expense.title || expense.purpose || '-'}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Amount:</strong></label>
+                    <p class="form-control-plaintext"><strong>${ExpenseTracker.formatCurrency(expense.amount || 0)}</strong></p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Category:</strong></label>
+                    <p class="form-control-plaintext">${expense.category || '-'}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Payment Method:</strong></label>
+                    <p class="form-control-plaintext"><span class="badge bg-${expense.payment_method === 'online' ? 'success' : 'secondary'}">${expense.payment_method || 'cash'}</span></p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Payment Type:</strong></label>
+                    <p class="form-control-plaintext"><span class="badge bg-${expense.payment_type === 'invoice' ? 'info' : 'warning'}">${expense.payment_type || 'N/A'}</span></p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Bank Account:</strong></label>
+                    <p class="form-control-plaintext">${expense.bank_account_id ? getBankName(expense.bank_account_id, expense) : 'N/A'}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Type:</strong></label>
+                    <p class="form-control-plaintext"><span class="badge bg-${typeClass}">${expense.expense_type || 'current'}</span></p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Date:</strong></label>
+                    <p class="form-control-plaintext">${date}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Bill/Receipt:</strong></label>
+                    <p class="form-control-plaintext">
+                        ${expense.bill_file ? 
+                            `<a href="/uploads/${expense.bill_file}" target="_blank" class="text-success">
+                                <i class="fas fa-paperclip me-1"></i>View Attachment
+                            </a>` : 
+                            '<i class="fas fa-paperclip text-muted me-1"></i>No file attached'
+                        }
+                    </p>
+                </div>
+                ${expense.description ? `
+                <div class="col-12">
+                    <label class="form-label"><strong>Description:</strong></label>
+                    <p class="form-control-plaintext">${expense.description}</p>
+                </div>
+                ` : ''}
+                <div class="col-12">
+                    <label class="form-label"><strong>Created:</strong></label>
+                    <p class="form-control-plaintext">${expense.created_at ? new Date(expense.created_at).toLocaleString() : 'N/A'}</p>
+                </div>
+            </div>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('viewExpenseModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error in viewExpense:', error);
+        ExpenseTracker.showNotification('Error loading expense details: ' + error.message, 'error');
+    }
+}
+
+async function deleteExpense(id) {
+    // Find the expense to get its title for the confirmation message
+    const expense = expenses.find(e => e.id === id);
+    const expenseTitle = expense ? expense.title : 'expense';
+    
+    await ExpenseTracker.deleteItem(
+        id,
+        `expense "${expenseTitle}"`,
+        '/api/expenses',
+        loadExpenses
+    );
+}
+
+// Bulk operations functionality
+function updateBulkButtons() {
+    try {
+        const checkboxes = document.querySelectorAll('.expense-checkbox:checked');
+        const bulkDeleteBtn = document.getElementById('bulkDeleteExpenses');
+        const bulkExportBtn = document.getElementById('bulkExportExpenses');
+        const selectedCount = document.getElementById('selectedExpensesCount');
+        const selectedDeleteCount = document.getElementById('selectedExpensesDeleteCount');
+        
+        if (!bulkDeleteBtn || !bulkExportBtn) {
+            console.error('Bulk buttons not found');
+            return;
+        }
+        
+        const count = checkboxes.length;
+        if (selectedCount) selectedCount.textContent = count;
+        if (selectedDeleteCount) selectedDeleteCount.textContent = count;
+        
+        const showButtons = count > 0;
+        bulkDeleteBtn.style.display = showButtons ? 'block' : 'none';
+        bulkExportBtn.style.display = showButtons ? 'block' : 'none';
+        
+        console.log(`Updated bulk buttons: ${count} selected`);
+    } catch (error) {
+        console.error('Error in updateBulkButtons:', error);
+        ExpenseTracker.showNotification('Error updating selection buttons: ' + error.message, 'error');
+    }
+}
+
+
+async function bulkExportExpenses() {
+    try {
+        const selectedCheckboxes = document.querySelectorAll('.expense-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+        
+        if (selectedIds.length === 0) {
+            ExpenseTracker.showNotification('No expenses selected for export.', 'warning');
+            return;
+        }
+        
+        console.log('Exporting expenses:', selectedIds);
+        // Show loading state
+        const exportBtn = document.getElementById('bulkExportExpenses');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Exporting...';
+        exportBtn.disabled = true;
+        
+        // Create a form to submit the selected IDs
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/api/expenses/export';
+        form.target = '_blank';
+        
+        // Add selected IDs as hidden inputs
+        selectedIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'expense_ids';
+            input.value = id;
+            form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        
+        ExpenseTracker.showNotification(`Exporting ${selectedIds.length} selected expense(s) to PDF...`, 'success');
+        
+        // Reset button state after a delay
+        setTimeout(() => {
+            exportBtn.innerHTML = originalText;
+            exportBtn.disabled = false;
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error exporting expenses:', error);
+        ExpenseTracker.showNotification('Error exporting expenses: ' + error.message, 'error');
+        
+        // Reset button state
+        const exportBtn = document.getElementById('bulkExportExpenses');
+        exportBtn.innerHTML = '<i class="fas fa-file-pdf me-1"></i>Export Selected (<span id="selectedExpensesCount">0</span>)';
+        exportBtn.disabled = false;
+    }
+}
+
+async function bulkDeleteExpenses() {
+    try {
+        const selectedCheckboxes = document.querySelectorAll('.expense-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+        
+        if (selectedIds.length === 0) {
+            ExpenseTracker.showNotification('No expenses selected for deletion.', 'warning');
+            return;
+        }
+        
+        console.log('Deleting expenses:', selectedIds);
+        
+        // Use styled delete confirmation modal instead of basic confirm()
+        ExpenseTracker.showDeleteConfirmation(
+            `Are you sure you want to delete ${selectedIds.length} selected expense(s)? This action cannot be undone.`,
+            'expenses',
+            async () => {
+            // Show loading state
+            const deleteBtn = document.getElementById('bulkDeleteExpenses');
+            const originalText = deleteBtn.innerHTML;
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Deleting...';
+            deleteBtn.disabled = true;
+            
+            // Delete all selected expenses sequentially to avoid race conditions
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (const id of selectedIds) {
+                try {
+                    await axios.delete(`/api/expenses/${id}`);
+                    successCount++;
+                } catch (error) {
+                    console.error(`Error deleting expense ${id}:`, error);
+                    errorCount++;
+                }
+            }
+            
+            // Reload expenses and update UI
+            await loadExpenses();
+            
+            // Reset button state
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+            
+            // Reset select all checkbox
+            document.getElementById('selectAllExpenses').checked = false;
+            updateBulkButtons();
+            
+            // Show result notification
+            if (errorCount === 0) {
+                ExpenseTracker.showNotification(`${successCount} expense(s) deleted successfully!`, 'success');
+            } else if (successCount > 0) {
+                ExpenseTracker.showNotification(`${successCount} expense(s) deleted successfully, ${errorCount} failed.`, 'warning');
+            } else {
+                ExpenseTracker.showNotification(`Failed to delete expenses. Please try again.`, 'error');
+            }
+            }
+        );
+    } catch (error) {
+        console.error('Error in bulkDeleteExpenses:', error);
+        ExpenseTracker.showNotification('Error in bulk delete operation: ' + error.message, 'error');
+    }
+}
+
+// Reset form when modal is closed
+document.getElementById('expenseModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('expenseForm').reset();
+    document.getElementById('expenseDate').valueAsDate = new Date();
+    editingExpenseId = null;
+    document.getElementById('expenseModalTitle').innerHTML = '<i class="fas fa-plus me-2"></i>Add Expense';
+});
+</script>
+{% endblock %}

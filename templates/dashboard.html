@@ -1,0 +1,713 @@
+{% extends "base.html" %}
+<!-- Template updated: 2025-08-30 15:30:00 - Professional Dashboard Design -->
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="professional-dashboard">
+
+    <!-- Refresh Button Section -->
+    <div class="refresh-section">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="welcome-greeting">
+                    <i class="fas fa-hand-wave me-2"></i>Hi {{ current_user.username or 'User' }}!
+                </div>
+                <button id="refreshBtn" class="btn btn-primary refresh-btn">
+                    <i class="fas fa-sync-alt me-2"></i><span>Refresh Data</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="metrics-section">
+        <div class="container-fluid">
+            <div class="row g-4" id="statsCards">
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card net-balance-card">
+                        <div class="metric-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="currentBalance">₹0.00</h3>
+                            <p class="metric-label">Current Balance</p>
+                            <small class="metric-description">Cash: <span id="cashBalance">₹0</span> | Bank: <span id="bankBalance">₹0</span></small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="totalExpenses">₹0.00</h3>
+                            <p class="metric-label">Total Expenses</p>
+                            <small class="metric-count" id="expenseCount">0 expenses</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="upcomingExpenses">₹0.00</h3>
+                            <p class="metric-label">Upcoming Expenses</p>
+                            <small class="metric-description">Planned expenses</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card info">
+                        <div class="metric-icon">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="invoiceRevenue">₹0.00</h3>
+                            <p class="metric-label">Total Invoice Amount</p>
+                            <small class="metric-description">In: <span id="invoiceInAmount">₹0</span> | Out: <span id="invoiceOutAmount">₹0</span></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Balance Summary Line -->
+    <div class="bank-balance-summary">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="balance-summary-card">
+                        <div class="balance-summary-content" id="bankBalanceSummaryContent">
+                            <div class="balance-summary-item">
+                                <i class="fas fa-university me-2"></i>
+                                <span class="balance-summary-label">Bank Balances:</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+        <div class="container-fluid">
+            <div class="row g-4">
+                <div class="col-xl-8">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5 class="chart-title">
+                                <i class="fas fa-chart-line me-2"></i>Financial Overview
+                            </h5>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="financialChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-4">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5 class="chart-title">
+                                <i class="fas fa-chart-pie me-2"></i>Expense Categories
+                            </h5>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="categoryChart" width="400" height="400"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Main Content Section -->
+    <div class="main-content-section">
+        <div class="container-fluid">
+            <div class="row g-4">
+                <!-- Overdue Amounts Column -->
+                <div class="col-lg-6">
+                    <div class="overdue-card">
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Overdue Amounts
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Incoming Overdue -->
+                            <div class="overdue-item incoming">
+                                <div class="overdue-icon">
+                                    <i class="fas fa-arrow-down"></i>
+                                </div>
+                                <div class="overdue-content">
+                                    <h3 class="overdue-amount" id="incomingOverdue">₹0.00</h3>
+                                    <p class="overdue-label">Incoming Overdue</p>
+                                    <small class="overdue-description">Money owed by clients</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Outgoing Overdue -->
+                            <div class="overdue-item outgoing">
+                                <div class="overdue-icon">
+                                    <i class="fas fa-arrow-up"></i>
+                                </div>
+                                <div class="overdue-content">
+                                    <h3 class="overdue-amount" id="outgoingOverdue">₹0.00</h3>
+                                    <p class="overdue-label">Outgoing Overdue</p>
+                                    <small class="overdue-description">Expenses to be paid</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Summary Statistics -->
+                            <div class="overdue-stats">
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h5 class="stat-value" id="overdueInvoiceCount">0</h5>
+                                        <p class="stat-label">Overdue Invoices</p>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-calendar-times"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h5 class="stat-value" id="upcomingExpenseCount">0</h5>
+                                        <p class="stat-label">Upcoming Expenses</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Column -->
+                <div class="col-lg-6">
+                    <div class="content-column">
+                        
+                        <!-- Overdue Invoices Details -->
+                        <div class="detail-card overdue">
+                            <div class="card-header">
+                                <h6 class="card-title">
+                                    <i class="fas fa-exclamation-circle me-2"></i>Overdue Invoices Details
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-container">
+                                    <table class="detail-table" id="overdueInvoicesTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Invoice #</th>
+                                                <th>Client</th>
+                                                <th>Amount</th>
+                                                <th>Due Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                    <div id="noOverdueInvoices" class="text-center text-muted py-4" style="display: none;">
+                                        <i class="fas fa-check-circle fa-2x mb-3 text-success"></i>
+                                        <p>No overdue invoices</p>
+                                        <small>All invoices are up to date</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Upcoming Expenses Details -->
+                        <div class="detail-card upcoming">
+                            <div class="card-header">
+                                <h6 class="card-title">
+                                    <i class="fas fa-calendar-alt me-2"></i>Upcoming Expenses Details
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-container">
+                                    <table class="detail-table" id="upcomingExpensesTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Title</th>
+                                                <th>Amount</th>
+                                                <th>Date</th>
+                                                <th>Category</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                    <div id="noUpcomingExpenses" class="text-center text-muted py-4" style="display: none;">
+                                        <i class="fas fa-calendar-check fa-2x mb-3 text-success"></i>
+                                        <p>No upcoming expenses</p>
+                                        <small>All expenses are current</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="recent-section">
+        <div class="container-fluid">
+            <div class="activity-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-history me-2"></i>Recent Expenses
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="activity-table" id="recentExpensesTable">
+                            <thead>
+                                <tr>
+                                    <th>Purpose</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="noRecentExpenses" style="display: none;">
+                        <p>No recent expenses found.</p>
+                        <a href="{{ url_for('expenses') }}" class="btn btn-primary">Add First Expense</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let financialChart = null;
+let categoryChart = null;
+
+async function loadDashboardStats() {
+    try {
+        const response = await axios.get('/api/dashboard/stats');
+        const stats = response.data;
+        
+        // Helper function to safely format currency
+        const formatCurrency = (amount) => {
+            if (window.ExpenseTracker && window.ExpenseTracker.formatCurrency) {
+                return window.ExpenseTracker.formatCurrency(amount);
+            }
+            // Fallback formatting
+            return `₹${parseFloat(amount || 0).toFixed(2)}`;
+        };
+        
+        // Update statistics cards
+        const totalExpensesElement = document.getElementById('totalExpenses');
+        const expenseCountElement = document.getElementById('expenseCount');
+        const currentBalanceElement = document.getElementById('currentBalance');
+        const cashBalanceElement = document.getElementById('cashBalance');
+        const bankBalanceElement = document.getElementById('bankBalance');
+        const upcomingExpensesElement = document.getElementById('upcomingExpenses');
+        const invoiceRevenueElement = document.getElementById('invoiceRevenue');
+        const invoiceInAmountElement = document.getElementById('invoiceInAmount');
+        const invoiceOutAmountElement = document.getElementById('invoiceOutAmount');
+        
+        if (totalExpensesElement) totalExpensesElement.textContent = formatCurrency(stats.expenses.total_expense_amount);
+        if (expenseCountElement) expenseCountElement.textContent = `${stats.expenses.total_expenses} expenses`;
+        if (currentBalanceElement) currentBalanceElement.textContent = formatCurrency(stats.balance);
+        
+        // Update cash and bank balances with fallback to 0 if not available
+        const cashBalance = stats.cash_balance !== undefined ? stats.cash_balance : 0;
+        const bankBalance = stats.bank_balance !== undefined ? stats.bank_balance : 0;
+        if (cashBalanceElement) cashBalanceElement.textContent = formatCurrency(cashBalance);
+        if (bankBalanceElement) bankBalanceElement.textContent = formatCurrency(bankBalance);
+        if (upcomingExpensesElement) upcomingExpensesElement.textContent = formatCurrency(stats.expenses.upcoming_expenses);
+        if (invoiceRevenueElement) invoiceRevenueElement.textContent = formatCurrency(stats.invoices.total_invoice_amount);
+        if (invoiceInAmountElement) invoiceInAmountElement.textContent = formatCurrency(stats.invoices.in_invoice_amount || 0);
+        if (invoiceOutAmountElement) invoiceOutAmountElement.textContent = formatCurrency(stats.invoices.out_invoice_amount || 0);
+        
+        // Update overdue amounts
+        const incomingOverdueElement = document.getElementById('incomingOverdue');
+        const outgoingOverdueElement = document.getElementById('outgoingOverdue');
+        const overdueInvoiceCountElement = document.getElementById('overdueInvoiceCount');
+        const upcomingExpenseCountElement = document.getElementById('upcomingExpenseCount');
+        
+        if (incomingOverdueElement) incomingOverdueElement.textContent = formatCurrency(stats.overdue.incoming_overdue);
+        if (outgoingOverdueElement) outgoingOverdueElement.textContent = formatCurrency(stats.overdue.outgoing_overdue);
+        if (overdueInvoiceCountElement) overdueInvoiceCountElement.textContent = stats.overdue.overdue_invoice_count || 0;
+        if (upcomingExpenseCountElement) upcomingExpenseCountElement.textContent = stats.overdue.upcoming_expense_count || 0;
+        
+        // Update recent expenses table
+        updateRecentExpensesTable(stats.recent_expenses);
+        
+        // Update overdue tables
+        updateOverdueInvoicesTable(stats.overdue_invoices);
+        updateUpcomingExpensesTable(stats.upcoming_expenses);
+        
+        // Update charts
+        updateCharts(stats);
+        
+        // Load bank accounts for the summary line
+        loadBankAccountsForSummary();
+        
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+        // Show user-friendly error message instead of crashing
+        showNotification('Unable to load dashboard data. Please refresh the page.', 'error');
+        throw error;
+    }
+}
+
+function updateRecentExpensesTable(expenses) {
+    try {
+        const tbody = document.querySelector('#recentExpensesTable tbody');
+        const noDataDiv = document.getElementById('noRecentExpenses');
+        
+        if (!tbody || !noDataDiv) {
+            console.error('Recent expenses table elements not found');
+            return;
+        }
+        
+        if (expenses && expenses.length > 0) {
+            const formatCurrency = (amount) => {
+                if (window.ExpenseTracker && window.ExpenseTracker.formatCurrency) {
+                    return window.ExpenseTracker.formatCurrency(amount);
+                }
+                return `₹${parseFloat(amount || 0).toFixed(2)}`;
+            };
+            
+            tbody.innerHTML = expenses.map(expense => `
+                <tr>
+                    <td>${expense.title || 'Untitled'}</td>
+                    <td>${formatCurrency(expense.amount)}</td>
+                    <td>${new Date(expense.expense_date).toLocaleDateString()}</td>
+                    <td><span class="badge ${expense.expense_type === 'upcoming' ? 'bg-warning' : 'bg-primary'}">${expense.expense_type || 'completed'}</span></td>
+                </tr>
+            `).join('');
+            document.querySelector('#recentExpensesTable').style.display = 'table';
+            noDataDiv.style.display = 'none';
+        } else {
+            document.querySelector('#recentExpensesTable').style.display = 'none';
+            noDataDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error updating recent expenses table:', error);
+    }
+}
+
+function updateOverdueInvoicesTable(invoices) {
+    try {
+        const tbody = document.querySelector('#overdueInvoicesTable tbody');
+        const noDataDiv = document.getElementById('noOverdueInvoices');
+        
+        if (!tbody || !noDataDiv) {
+            console.error('Overdue invoices table elements not found');
+            return;
+        }
+        
+        if (invoices && invoices.length > 0) {
+            const formatCurrency = (amount) => {
+                if (window.ExpenseTracker && window.ExpenseTracker.formatCurrency) {
+                    return window.ExpenseTracker.formatCurrency(amount);
+                }
+                return `₹${parseFloat(amount || 0).toFixed(2)}`;
+            };
+            
+            tbody.innerHTML = invoices.map(invoice => `
+                <tr>
+                    <td><strong>${invoice.invoice_number || 'N/A'}</strong></td>
+                    <td>${invoice.client_name || 'Unknown Client'}</td>
+                    <td class="amount overdue">${formatCurrency(invoice.total_amount)}</td>
+                    <td>${new Date(invoice.due_date).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+            document.querySelector('#overdueInvoicesTable').style.display = 'table';
+            noDataDiv.style.display = 'none';
+        } else {
+            document.querySelector('#overdueInvoicesTable').style.display = 'none';
+            noDataDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error updating overdue invoices table:', error);
+    }
+}
+
+function updateUpcomingExpensesTable(expenses) {
+    try {
+        const tbody = document.querySelector('#upcomingExpensesTable tbody');
+        const noDataDiv = document.getElementById('noUpcomingExpenses');
+        
+        if (!tbody || !noDataDiv) {
+            console.error('Upcoming expenses table elements not found');
+            return;
+        }
+        
+        if (expenses && expenses.length > 0) {
+            const formatCurrency = (amount) => {
+                if (window.ExpenseTracker && window.ExpenseTracker.formatCurrency) {
+                    return window.ExpenseTracker.formatCurrency(amount);
+                }
+                return `₹${parseFloat(amount || 0).toFixed(2)}`;
+            };
+            
+            tbody.innerHTML = expenses.map(expense => `
+                <tr>
+                    <td>${expense.title || 'Untitled'}</td>
+                    <td class="amount upcoming">${formatCurrency(expense.amount)}</td>
+                    <td>${new Date(expense.expense_date).toLocaleDateString()}</td>
+                    <td><span class="badge">${expense.category || 'General'}</span></td>
+                </tr>
+            `).join('');
+            document.querySelector('#upcomingExpensesTable').style.display = 'table';
+            noDataDiv.style.display = 'none';
+        } else {
+            document.querySelector('#upcomingExpensesTable').style.display = 'none';
+            noDataDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error updating upcoming expenses table:', error);
+    }
+}
+
+function updateCharts(stats) {
+    // Financial Overview Chart
+    const ctx1 = document.getElementById('financialChart').getContext('2d');
+    
+    if (financialChart) {
+        financialChart.destroy();
+    }
+    
+    financialChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: ['Incoming Overdue', 'Outgoing Overdue', 'Total Expenses', 'Invoice Revenue'],
+            datasets: [{
+                label: 'Amount (₹)',
+                data: [
+                    parseFloat(stats.overdue.incoming_overdue),
+                    parseFloat(stats.overdue.outgoing_overdue),
+                    parseFloat(stats.expenses.total_expense_amount),
+                    parseFloat(stats.invoices.total_invoice_amount)
+                ],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(0, 123, 255, 0.8)',
+                    'rgba(255, 193, 7, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(0, 123, 255, 1)',
+                    'rgba(255, 193, 7, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Category Chart (Simple pie chart with mock data)
+    const ctx2 = document.getElementById('categoryChart').getContext('2d');
+    
+    if (categoryChart) {
+        categoryChart.destroy();
+    }
+    
+    categoryChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: ['Office', 'Travel', 'Food', 'Utilities', 'Other'],
+            datasets: [{
+                data: [30, 20, 25, 15, 10],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#FF9F40',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Load dashboard on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load dashboard stats first
+    loadDashboardStats().then(() => {
+        // Bank accounts loaded via loadDashboardStats
+    }).catch(error => {
+        console.error('Error loading dashboard:', error);
+        // Still try to load bank accounts for summary
+        loadBankAccountsForSummary();
+    });
+    
+    // Setup refresh button functionality
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            refreshDashboardData();
+        });
+    }
+});
+
+// Refresh dashboard data function
+function refreshDashboardData() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    const icon = refreshBtn.querySelector('i');
+    const text = refreshBtn.querySelector('span') || refreshBtn;
+    
+    // Add loading state
+    refreshBtn.classList.add('loading');
+    refreshBtn.disabled = true;
+    text.textContent = 'Refreshing...';
+    
+    // Reload dashboard stats
+    loadDashboardStats().finally(() => {
+        // Remove loading state
+        refreshBtn.classList.remove('loading');
+        refreshBtn.disabled = false;
+        text.textContent = 'Refresh Data';
+        
+        // Show success message
+        showNotification('Dashboard data refreshed successfully!', 'success');
+    });
+}
+
+
+
+// Load bank accounts for summary line
+async function loadBankAccountsForSummary() {
+    try {
+        const response = await fetch('/api/user-banks');
+        if (response.ok) {
+            const banks = await response.json();
+            updateBankBalanceSummary(banks);
+        } else {
+            console.error('Failed to load bank accounts for summary');
+        }
+    } catch (error) {
+        console.error('Error loading bank accounts for summary:', error);
+    }
+}
+
+// Update bank balance summary with individual bank balances
+function updateBankBalanceSummary(banks) {
+    try {
+        const bankBalanceSummaryContent = document.getElementById('bankBalanceSummaryContent');
+        if (!bankBalanceSummaryContent) {
+            console.error('Bank balance summary content element not found');
+            return;
+        }
+        
+        if (!banks || banks.length === 0) {
+            // Show empty state if no banks
+            bankBalanceSummaryContent.innerHTML = `
+                <div class="balance-summary-item">
+                    <i class="fas fa-university me-2"></i>
+                    <span class="balance-summary-label">No bank accounts found</span>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = `
+            <div class="balance-summary-item">
+                <i class="fas fa-university me-2"></i>
+                <span class="balance-summary-label">Bank Balances:</span>
+            </div>
+        `;
+        
+        // Add individual bank balances
+        banks.forEach(bank => {
+            try {
+                const currentBalance = parseFloat(bank.current_balance || 0);
+                const bankName = bank.bank_name || 'Unknown Bank'; // Show full name
+                const isDefault = bank.is_default;
+                
+                html += `
+                    <div class="balance-summary-item ${isDefault ? 'default-bank-summary' : ''}">
+                        <span class="balance-summary-label">
+                            ${bankName}${isDefault ? ' <i class="fas fa-star text-warning"></i>' : ''}:
+                        </span>
+                        <span class="balance-summary-value">₹${currentBalance.toFixed(2)}</span>
+                    </div>
+                `;
+            } catch (bankError) {
+                console.error('Error processing bank for summary:', bank, bankError);
+            }
+        });
+        
+        bankBalanceSummaryContent.innerHTML = html;
+    } catch (error) {
+        console.error('Error updating bank balance summary:', error);
+    }
+}
+
+// Detailed balance functions removed
+
+// Show notification function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

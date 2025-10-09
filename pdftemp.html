@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Template</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .invoice-title {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .invoice-number {
+            font-size: 18px;
+            color: #999;
+        }
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .client-info, .invoice-info {
+            flex: 1;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .info-row {
+            margin-bottom: 8px;
+            color: #555;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .items-table th {
+            background-color: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #ddd;
+            color: #333;
+            font-weight: bold;
+        }
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            color: #555;
+        }
+        .total-section {
+            text-align: right;
+            margin-top: 20px;
+        }
+        .total-row {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .grand-total {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            border-top: 2px solid #333;
+            padding-top: 10px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .notes {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .notes h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .notes p {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="header">
+            <div class="company-name">LAITUSNEO TRACK</div>
+            <div class="invoice-title">INVOICE</div>
+            <div class="invoice-number">INV-2025-0001</div>
+        </div>
+        
+        <div class="invoice-details">
+            <div class="client-info">
+                <div class="section-title">Bill To:</div>
+                <div class="info-row">Client Name</div>
+                <div class="info-row">Client Address</div>
+                <div class="info-row">City, State, ZIP</div>
+                <div class="info-row">Phone: (123) 456-7890</div>
+                <div class="info-row">Email: client@example.com</div>
+            </div>
+            
+            <div class="invoice-info">
+                <div class="section-title">Invoice Details:</div>
+                <div class="info-row">Date: January 1, 2025</div>
+                <div class="info-row">Due Date: January 31, 2025</div>
+                <div class="info-row">Invoice #: INV-2025-0001</div>
+                <div class="info-row">Terms: Net 30</div>
+            </div>
+        </div>
+        
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Web Development Services</td>
+                    <td>1</td>
+                    <td>$2,500.00</td>
+                    <td>$2,500.00</td>
+                </tr>
+                <tr>
+                    <td>UI/UX Design</td>
+                    <td>1</td>
+                    <td>$1,500.00</td>
+                    <td>$1,500.00</td>
+                </tr>
+                <tr>
+                    <td>Project Management</td>
+                    <td>20 hours</td>
+                    <td>$75.00</td>
+                    <td>$1,500.00</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="total-section">
+            <div class="total-row">Subtotal: $5,500.00</div>
+            <div class="total-row">Tax (8.5%): $467.50</div>
+            <div class="grand-total">Total: $5,967.50</div>
+        </div>
+        
+        <div class="notes">
+            <h4>Notes:</h4>
+            <p>Thank you for your business! This invoice is due within 30 days. Please include the invoice number when making payment.</p>
+            <p>For any questions regarding this invoice, please contact us at billing@laitusneo.com</p>
+        </div>
+        
+        <div class="footer">
+            <p>LAITUSNEO TRACK | Professional Financial Management Solutions</p>
+            <p>123 Business Ave, Suite 100 | City, State 12345 | (555) 123-4567</p>
+        </div>
+    </div>
+</body>
+</html>

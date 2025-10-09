@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Expense Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <style>
+        /* Enhanced Login Page Styles */
+        .auth-body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .auth-container {
+            width: 100%;
+            max-width: 360px;
+            padding: 10px;
+        }
+        
+        .auth-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 18px;
+        }
+        
+        .auth-logo-img {
+            height: 38px;
+            margin-bottom: 12px;
+        }
+        
+        .auth-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .auth-subtitle {
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 0;
+        }
+        
+        .user-type-selection {
+            margin-bottom: 16px;
+        }
+        
+        .user-type-selection .form-label {
+            color: #374151;
+            font-size: 13px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        
+        .dropdown-container {
+            position: relative;
+        }
+        
+        .form-select-lg {
+            padding: 10px 14px;
+            font-size: 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-select-lg:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+        
+        .form-group {
+            margin-bottom: 14px;
+        }
+        
+        .form-label {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group-text {
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-right: none;
+            color: #6b7280;
+            padding: 10px 12px;
+            border-radius: 6px 0 0 6px;
+            font-size: 13px;
+        }
+        
+        .form-control {
+            border: 1px solid #d1d5db;
+            border-left: none;
+            padding: 10px 12px;
+            font-size: 13px;
+            border-radius: 0 6px 6px 0;
+            transition: all 0.2s ease;
+            background-color: #ffffff;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+        
+        .btn-outline-secondary {
+            border: 1px solid #d1d5db;
+            border-left: none;
+            padding: 10px 12px;
+            border-radius: 0 6px 6px 0;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        
+        .form-check {
+            margin-bottom: 14px;
+        }
+        
+        .form-check-input {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+        }
+        
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+        
+        .form-check-label {
+            color: #374151;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .btn-auth {
+            width: 100%;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            transition: all 0.2s ease;
+            text-transform: none;
+            letter-spacing: 0.3px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            box-shadow: 0 2px 8px rgba(72, 187, 120, 0.25);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.35);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            box-shadow: 0 2px 8px rgba(237, 137, 54, 0.25);
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(237, 137, 54, 0.35);
+        }
+        
+        .auth-footer {
+            margin-top: 16px;
+            text-align: center;
+        }
+        
+        .auth-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+            font-size: 12px;
+        }
+        
+        .auth-link:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+        
+        .alert {
+            border-radius: 6px;
+            border: none;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            font-size: 12px;
+        }
+        
+        .alert-danger {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+        
+        .alert-success {
+            background-color: #c6f6d5;
+            color: #2f855a;
+        }
+        
+        .alert-info {
+            background-color: #bee3f8;
+            color: #2b6cb0;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 576px) {
+            .auth-container {
+                padding: 8px;
+            }
+            
+            .auth-card {
+                padding: 20px 16px;
+            }
+            
+            .auth-title {
+                font-size: 18px;
+            }
+            
+            .auth-logo-img {
+                height: 32px;
+            }
+            
+            .form-select-lg,
+            .form-control {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+            
+            .input-group-text {
+                padding: 8px 10px;
+            }
+            
+            .btn-auth {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+        
+        /* Animation for form switching */
+        .auth-form {
+            transition: all 0.3s ease;
+        }
+        
+        /* Custom dropdown arrow */
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px 12px;
+            padding-right: 45px;
+        }
+    </style>
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <img src="{{ url_for('static', filename='laitusneo.svg') }}" alt="Laitusneo Logo" class="auth-logo-img">
+                    <h2 class="auth-title">Welcome Back</h2>
+                    <p class="auth-subtitle">Sign in to your Expense Tracker account</p>
+                </div>
+            </div>
+            
+            <!-- User Type Selection -->
+            <div class="user-type-selection mb-4">
+                <label for="userTypeSelect" class="form-label fw-semibold">Select User Type</label>
+                <div class="dropdown-container">
+                    <select class="form-select form-select-lg" id="userTypeSelect" name="userType">
+                        <option value="client" selected>
+                            <i class="fas fa-user me-2"></i>Client
+                        </option>
+                        <option value="sub_user">
+                            <i class="fas fa-users me-2"></i>Sub User
+                        </option>
+                        <option value="admin">
+                            <i class="fas fa-shield-alt me-2"></i>Admin
+                        </option>
+                    </select>
+                </div>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Client Login Form -->
+            <form method="POST" action="{{ url_for('login') }}" class="auth-form" id="clientLoginForm">
+                <input type="hidden" name="login_type" value="client">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                    <label class="form-check-label" for="remember">Remember me</label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-auth">
+                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                </button>
+            </form>
+            
+            <!-- Sub User Login Form -->
+            <form method="POST" action="{{ url_for('sub_user_login') }}" class="auth-form" id="subUserLoginForm" style="display: none;">
+                <input type="hidden" name="login_type" value="sub_user">
+                <div class="form-group">
+                    <label for="sub_user_id" class="form-label">Sub User ID</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                        <input type="text" class="form-control" id="sub_user_id" name="sub_user_id" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sub_user_password" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="sub_user_password" name="password" required>
+                        <button class="btn btn-outline-secondary" type="button" id="toggleSubUserPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="sub_user_remember" name="remember">
+                    <label class="form-check-label" for="sub_user_remember">Remember me</label>
+                </div>
+                
+                <button type="submit" class="btn btn-success btn-auth">
+                    <i class="fas fa-sign-in-alt me-2"></i>Sub User Sign In
+                </button>
+            </form>
+            
+            <!-- Admin Login Form -->
+            <form method="POST" action="{{ url_for('admin_login') }}" class="auth-form" id="adminLoginForm" style="display: none;">
+                <input type="hidden" name="login_type" value="admin">
+                <div class="form-group">
+                    <label for="admin_username" class="form-label">Admin Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user-shield"></i></span>
+                        <input type="text" class="form-control" id="admin_username" name="username" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="admin_password" class="form-label">Admin Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="admin_password" name="password" required>
+                        <button class="btn btn-outline-secondary" type="button" id="toggleAdminPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="admin_remember" name="remember">
+                    <label class="form-check-label" for="admin_remember">Remember me</label>
+                </div>
+                
+                <button type="submit" class="btn btn-warning btn-auth">
+                    <i class="fas fa-shield-alt me-2"></i>Admin Sign In
+                </button>
+            </form>
+            
+            <div class="auth-footer">
+                <p class="text-center mb-0">
+                    Don't have an account? 
+                    <a href="{{ url_for('register') }}" class="auth-link">Sign up here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle between client, sub user, and admin login forms
+        document.getElementById('userTypeSelect').addEventListener('change', function() {
+            const clientForm = document.getElementById('clientLoginForm');
+            const subUserForm = document.getElementById('subUserLoginForm');
+            const adminForm = document.getElementById('adminLoginForm');
+            
+            // Hide all forms first
+            clientForm.style.display = 'none';
+            subUserForm.style.display = 'none';
+            adminForm.style.display = 'none';
+            
+            // Show the selected form
+            if (this.value === 'client') {
+                clientForm.style.display = 'block';
+            } else if (this.value === 'sub_user') {
+                subUserForm.style.display = 'block';
+            } else if (this.value === 'admin') {
+                adminForm.style.display = 'block';
+            }
+        });
+        
+        // Toggle password visibility for user form
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const password = document.getElementById('password');
+            const icon = this.querySelector('i');
+            
+            if (password.type === 'password') {
+                password.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                password.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+        
+        // Toggle password visibility for sub user form
+        document.getElementById('toggleSubUserPassword').addEventListener('click', function() {
+            const password = document.getElementById('sub_user_password');
+            const icon = this.querySelector('i');
+            
+            if (password.type === 'password') {
+                password.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                password.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+        
+        // Toggle password visibility for admin form
+        document.getElementById('toggleAdminPassword').addEventListener('click', function() {
+            const password = document.getElementById('admin_password');
+            const icon = this.querySelector('i');
+            
+            if (password.type === 'password') {
+                password.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                password.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    </script>
+</body>
+</html>

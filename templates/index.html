@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="professional-home">
+    <div class="row">
+        <div class="col-12">
+            <div class="compact-welcome-card">
+            <div class="welcome-header">
+                <h2 class="welcome-title"><i class="fas fa-chart-line me-2"></i>Welcome to Laitusneo Track</h2>
+                <p class="welcome-subtitle">Manage your expenses, track transactions, and generate professional invoices all in one place.</p>
+            </div>
+            <div class="welcome-actions">
+                <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}" role="button">
+                    <i class="fas fa-chart-dashboard me-2"></i>Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-3">
+    <div class="col-lg-3 col-md-6">
+        <div class="compact-feature-card">
+            <div class="feature-icon-small bg-primary">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div class="feature-content">
+                <h6 class="feature-title">Track Expenses</h6>
+                <p class="feature-text">Keep track of all your expenses with detailed categorization.</p>
+                <a href="{{ url_for('expenses') }}" class="feature-btn feature-btn-primary">
+                    <i class="fas fa-arrow-right me-2"></i>Get Started
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="compact-feature-card">
+            <div class="feature-icon-small bg-success">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <div class="feature-content">
+                <h6 class="feature-title">Manage Transactions</h6>
+                <p class="feature-text">Record debit and credit transactions to maintain accurate records.</p>
+                <a href="{{ url_for('transactions') }}" class="feature-btn feature-btn-success">
+                    <i class="fas fa-arrow-right me-2"></i>View Transactions
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="compact-feature-card">
+            <div class="feature-icon-small bg-warning">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div class="feature-content">
+                <h6 class="feature-title">Generate Invoices</h6>
+                <p class="feature-text">Create professional invoices with automatic numbering.</p>
+                <a href="{{ url_for('invoices') }}" class="feature-btn feature-btn-warning">
+                    <i class="fas fa-arrow-right me-2"></i>Create Invoice
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="compact-feature-card">
+            <div class="feature-icon-small bg-info">
+                <i class="fas fa-download"></i>
+            </div>
+            <div class="feature-content">
+                <h6 class="feature-title">Export Data</h6>
+                <p class="feature-text">Export your data in CSV format for analysis.</p>
+                <div class="dropdown">
+                    <button class="feature-btn feature-btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/api/export/expenses">Expenses CSV</a></li>
+                        <li><a class="dropdown-item" href="/api/export/transactions">Transactions CSV</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="compact-info-card">
+            <div class="info-header">
+                <h6 class="info-title"><i class="fas fa-info-circle me-2"></i>Quick Features</h6>
+            </div>
+            <div class="info-content">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="feature-list">
+                            <h6 class="feature-list-title"><i class="fas fa-check-circle text-success me-2"></i>Expense Management</h6>
+                            <ul class="feature-list-items">
+                                <li>Add regular and upcoming expenses</li>
+                                <li>Upload bill attachments</li>
+                                <li>Categorize expenses</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-list">
+                            <h6 class="feature-list-title"><i class="fas fa-check-circle text-success me-2"></i>Transaction Tracking</h6>
+                            <ul class="feature-list-items">
+                                <li>Record debit and credit transactions</li>
+                                <li>Upload receipt files</li>
+                                <li>Automatic balance calculation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,4041 @@
+{% extends "base.html" %}
+
+{% block title %}Sub Users{% endblock %}
+
+{% block content %}
+<style>
+/* Page Layout - Fixed height with internal scrolling */
+.sub-users-container {
+    height: calc(100vh - 80px); /* Fixed height minus header */
+    overflow: hidden; /* Prevent page scrolling */
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+    overflow-y: auto; /* Internal scrolling */
+    padding-right: 10px; /* Space for scrollbar */
+}
+
+/* Ensure tables fit within the container */
+.table-responsive {
+    max-height: 400px; /* Limit table height */
+    overflow-y: auto;
+}
+
+/* Compact spacing for better fit */
+.metrics-section {
+    margin-bottom: 20px;
+}
+
+.filter-section {
+    margin-bottom: 20px;
+}
+
+.sub-users-section {
+    margin-bottom: 20px;
+}
+
+.pending-requests-section {
+    margin-bottom: 20px;
+}
+
+/* Professional Confirmation Modal Styling */
+#confirmationModal .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border: none;
+}
+
+#confirmationModal .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    padding: 20px 25px;
+}
+
+#confirmationModal .modal-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+#confirmationModal .confirmation-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+#confirmationModal .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+#confirmationModal .btn-close:hover {
+    opacity: 1;
+}
+
+#confirmationModal .modal-body {
+    padding: 25px;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+#confirmationModal .modal-footer {
+    padding: 20px 25px 25px;
+    gap: 10px;
+}
+
+#confirmationModal .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+#confirmationModal .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+#confirmationModal .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+#confirmationModal .btn-secondary {
+    background: #6c757d;
+    border: none;
+}
+
+#confirmationModal .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+#confirmationModal .confirmation-details .alert {
+    border-radius: 8px;
+    border: none;
+    background: #f8f9fa;
+}
+
+#confirmationModal .confirmation-details h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+/* Compact Table Styling - Same look, less spacing */
+#subUsersTable th,
+#subUsersTable td {
+    padding: 6px 8px;
+    font-size: 0.9rem;
+}
+
+#subUsersTable thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+#subUsersTable tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+#pendingRequestsTable th,
+#pendingRequestsTable td {
+    padding: 6px 8px;
+    font-size: 0.9rem;
+}
+
+#pendingRequestsTable thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+#pendingRequestsTable tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Status badges */
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Action buttons */
+.action-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    margin: 0 0.125rem;
+}
+
+/* Generated credentials display */
+.generated-credentials {
+    background-color: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.credential-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.credential-item:last-child {
+    margin-bottom: 0;
+}
+
+.credential-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.credential-value {
+    font-family: 'Courier New', monospace;
+    background-color: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+    font-size: 0.9rem;
+}
+
+.copy-btn {
+    margin-left: 0.5rem;
+    padding: 0.125rem 0.25rem;
+    font-size: 0.75rem;
+}
+
+/* Notification Container */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 350px;
+    width: 100%;
+}
+
+.notification-container .alert {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 10px;
+    padding: 12px 40px 12px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    animation: slideInRight 0.3s ease-out;
+    position: relative;
+}
+
+.notification-container .alert .btn-close {
+    padding: 0.25rem 0.5rem;
+    margin: -0.25rem -0.5rem -0.25rem auto;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    position: relative;
+    z-index: 1;
+}
+
+.notification-container .alert .btn-close:hover {
+    opacity: 1;
+}
+
+/* Animation for notifications */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Search button active state */
+.search-toggle-btn.active {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+/* Filter card styling */
+.filter-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.filter-card .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;
+}
+
+.filter-card .card-body {
+    padding: 1rem;
+}
+
+/* Action buttons styling */
+.action-btn {
+    margin: 0 2px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Status badge styling */
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+}
+
+/* Table row hover effect */
+#subUsersTable tbody tr:hover,
+#pendingRequestsTable tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+}
+
+/* Responsive notifications */
+@media (max-width: 768px) {
+    .notification-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .notification-container .alert {
+        font-size: 0.85rem;
+        padding: 10px 35px 10px 14px;
+    }
+}
+</style>
+
+<div class="professional-dashboard">
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="page-header">
+                    <!-- Removed title and subtitle for compact design -->
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-outline-secondary search-toggle-btn me-2" id="searchToggleBtn" onclick="toggleSearch()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="btn btn-primary add-btn" data-bs-toggle="modal" data-bs-target="#subUserModal">
+                        <i class="fas fa-plus me-2"></i>Create Sub User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Container with Fixed Height -->
+    <div class="sub-users-container">
+        <div class="main-content">
+
+    <!-- Summary Cards Section -->
+    <div class="metrics-section">
+        <div class="container-fluid">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="totalSubUsers">0</h3>
+                            <p class="metric-label">Total Sub Users</p>
+                            <small class="metric-description">All created accounts</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card success">
+                        <div class="metric-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="activeSubUsers">0</h3>
+                            <p class="metric-label">Active Users</p>
+                            <small class="metric-description">Can login & use system</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="pendingRequests">0</h3>
+                            <p class="metric-label">Pending Requests</p>
+                            <small class="metric-description">Need your approval</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card info">
+                        <div class="metric-icon">
+                            <i class="fas fa-user-times"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="inactiveSubUsers">0</h3>
+                            <p class="metric-label">Inactive Users</p>
+                            <small class="metric-description">Cannot access system</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section" id="filtersSection" style="display: none;">
+        <div class="container-fluid">
+            <div class="filter-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-filter me-2"></i>Filter Options
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="filterSubUserId" class="form-label">Sub User ID</label>
+                            <input type="text" class="form-control" id="filterSubUserId" placeholder="Search by ID..." onkeyup="filterSubUsers()">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="filterName" placeholder="Search by name..." onkeyup="filterSubUsers()">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterStatus" class="form-label">Status</label>
+                            <select class="form-select" id="filterStatus" onchange="filterSubUsers()">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterDateFrom" class="form-label">Created From</label>
+                            <input type="date" class="form-control" id="filterDateFrom" onchange="filterSubUsers()">
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary w-100" onclick="clearSubUserFilters()">
+                                <i class="fas fa-times me-1"></i>Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sub Users Table Section -->
+    <div class="content-section">
+        <div class="container-fluid">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="subUsersTable">
+                            <thead>
+                                <tr>
+                                    <th>Sub User ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Created Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subUsersTableBody">
+                                <!-- Sub users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Requests Section -->
+            <div class="card mt-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="pendingRequestsTable">
+                            <thead>
+                                <tr>
+                                    <th>Sub User</th>
+                                    <th>Request Type</th>
+                                    <th>Title</th>
+                                    <th>Amount</th>
+                                    <th>Payment Details</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingRequestsTableBody">
+                                <!-- Pending requests will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Sub User Modal -->
+<div class="modal fade" id="subUserModal" tabindex="-1" aria-labelledby="subUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="subUserModalLabel" style="font-size: 1.1rem; font-weight: 600;">
+                    <i class="fas fa-user-plus me-2"></i>Create New Sub User
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="subUserForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="firstName" name="first_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="lastName" name="last_name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email (Optional)</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Sub User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Generated Credentials Modal -->
+<div class="modal fade" id="credentialsModal" tabindex="-1" aria-labelledby="credentialsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="credentialsModalLabel" style="font-size: 1.1rem; font-weight: 600;">
+                    <i class="fas fa-key me-2"></i>Generated Credentials
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="generated-credentials">
+                    <div class="credential-item">
+                        <span class="credential-label">Sub User ID:</span>
+                        <span class="credential-value" id="generatedSubUserId"></span>
+                    </div>
+                    <div class="credential-item">
+                        <span class="credential-label">Password:</span>
+                        <span class="credential-value" id="generatedPassword"></span>
+                    </div>
+                </div>
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Important:</strong> Please save these credentials securely. The password cannot be recovered.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Sub User Details Modal -->
+<div class="modal fade" id="viewSubUserModal" tabindex="-1" aria-labelledby="viewSubUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewSubUserModalLabel" style="font-size: 1.1rem; font-weight: 600;">
+                    <i class="fas fa-user me-2"></i>Sub User Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="viewSubUserModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetPasswordModalLabel" style="font-size: 1.1rem; font-weight: 600;">
+                    <i class="fas fa-key me-2"></i>Password Reset
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="resetPasswordModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteSubUserModal" tabindex="-1" aria-labelledby="deleteSubUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSubUserModalLabel" style="font-size: 1.1rem; font-weight: 600;">
+                    <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this sub user? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteSubUser">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-details {
+    max-width: 200px;
+}
+
+.payment-details .small {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.payment-details .small div {
+    margin-bottom: 2px;
+}
+
+/* Make the payment details column wider */
+#pendingRequestsTable th:nth-child(5),
+#pendingRequestsTable td:nth-child(5) {
+    min-width: 200px;
+    max-width: 250px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .payment-details {
+        max-width: 150px;
+    }
+    
+    #pendingRequestsTable th:nth-child(5),
+    #pendingRequestsTable td:nth-child(5) {
+        min-width: 150px;
+        max-width: 180px;
+    }
+}
+</style>
+
+<script>
+let currentSubUserId = null;
+
+// Load sub users on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DEBUG: DOM Content Loaded - initializing sub users page...');
+    loadSubUsers();
+    console.log('DEBUG: About to load pending requests...');
+    loadPendingRequests();
+    loadSubUserStats();
+});
+
+// Load sub user statistics
+function loadSubUserStats() {
+    fetch('/api/sub-users/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateMetricCardsWithData(data.stats);
+            } else {
+                console.error('Error loading sub user stats:', data.message);
+                // Fallback to counting from DOM
+                updateMetricCards();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Fallback to counting from DOM
+            updateMetricCards();
+        });
+}
+
+// Update metric cards with backend data
+function updateMetricCardsWithData(stats) {
+    document.getElementById('totalSubUsers').textContent = stats.total_sub_users || 0;
+    document.getElementById('activeSubUsers').textContent = stats.active_sub_users || 0;
+    document.getElementById('pendingRequests').textContent = stats.pending_requests || 0;
+    document.getElementById('inactiveSubUsers').textContent = stats.inactive_sub_users || 0;
+}
+
+// Load sub users
+function loadSubUsers() {
+    fetch('/api/sub-users')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySubUsers(data.sub_users);
+            } else {
+                console.error('Error loading sub users:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+// Display sub users in table
+function displaySubUsers(subUsers) {
+    const tbody = document.getElementById('subUsersTableBody');
+    tbody.innerHTML = '';
+    
+    if (subUsers.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    <i class="fas fa-users fa-2x mb-2 d-block"></i>
+                    No sub users found. Create your first sub user to get started.
+                </td>
+            </tr>
+        `;
+        // Update metric cards even when no sub users
+        updateMetricCards();
+        return;
+    }
+    
+    subUsers.forEach(subUser => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <span class="fw-bold text-primary">${subUser.sub_user_id}</span>
+            </td>
+            <td>${subUser.first_name} ${subUser.last_name}</td>
+            <td>${subUser.email || '-'}</td>
+            <td>${formatDate(subUser.created_at)}</td>
+            <td>
+                <span class="badge ${subUser.is_active ? 'bg-success' : 'bg-secondary'} status-badge">
+                    ${subUser.is_active ? 'Active' : 'Inactive'}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary action-btn" onclick="viewSubUser(${subUser.id})" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-info action-btn" onclick="downloadReport(${subUser.id})" title="Download Report">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary action-btn" onclick="resetPassword(${subUser.id})" title="Reset Password">
+                    <i class="fas fa-key"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-warning action-btn" onclick="toggleSubUserStatus(${subUser.id}, ${subUser.is_active})" title="${subUser.is_active ? 'Deactivate' : 'Activate'}">
+                    <i class="fas fa-${subUser.is_active ? 'pause' : 'play'}"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger action-btn" onclick="deleteSubUser(${subUser.id})" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update metric cards after displaying sub users
+    updateMetricCards();
+}
+
+// Create sub user
+document.getElementById('subUserForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    fetch('/api/sub-users', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show credentials modal
+            document.getElementById('generatedSubUserId').textContent = data.sub_user_id;
+            document.getElementById('generatedPassword').textContent = data.password;
+            
+            const credentialsModal = new bootstrap.Modal(document.getElementById('credentialsModal'));
+            credentialsModal.show();
+            
+            // Reset form and close create modal
+            document.getElementById('subUserForm').reset();
+            bootstrap.Modal.getInstance(document.getElementById('subUserModal')).hide();
+            
+            // Reload sub users and stats
+            loadSubUsers();
+            loadSubUserStats();
+        } else {
+            showAlert('Error creating sub user: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error creating sub user', 'danger');
+    });
+});
+
+// View sub user details
+function viewSubUser(subUserId) {
+    console.log('ViewSubUser called with ID:', subUserId);
+    
+    // Show loading message in modal first
+    const modalBody = document.getElementById('viewSubUserModalBody');
+    if (!modalBody) {
+        console.error('Modal body not found!');
+        showAlert('Error: Modal not found', 'danger');
+        return;
+    }
+    
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading sub user details...</p>
+        </div>
+    `;
+    
+    // Show the modal first
+    const modal = new bootstrap.Modal(document.getElementById('viewSubUserModal'));
+    modal.show();
+    
+    fetch(`/api/sub-users/${subUserId}/report`)
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('API response:', data);
+            if (data.success) {
+                const report = data.report;
+                
+                modalBody.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Basic Information</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Sub User ID:</strong></td><td>${report.sub_user_info.sub_user_id}</td></tr>
+                                <tr><td><strong>Name:</strong></td><td>${report.sub_user_info.name}</td></tr>
+                                <tr><td><strong>Email:</strong></td><td>${report.sub_user_info.email || 'Not provided'}</td></tr>
+                                <tr><td><strong>Status:</strong></td><td><span class="badge ${report.sub_user_info.is_active ? 'bg-success' : 'bg-secondary'}">${report.sub_user_info.is_active ? 'Active' : 'Inactive'}</span></td></tr>
+                                <tr><td><strong>Created:</strong></td><td>${report.sub_user_info.created_at}</td></tr>
+                                <tr><td><strong>Created By:</strong></td><td>${report.sub_user_info.created_by}</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Activity Summary</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Total Requests:</strong></td><td>${report.summary.total_requests}</td></tr>
+                                <tr><td><strong>Approved:</strong></td><td><span class="text-success">${report.summary.approved_requests}</span></td></tr>
+                                <tr><td><strong>Rejected:</strong></td><td><span class="text-danger">${report.summary.rejected_requests}</span></td></tr>
+                                <tr><td><strong>Pending:</strong></td><td><span class="text-warning">${report.summary.pending_requests}</span></td></tr>
+                                <tr><td><strong>Total Amount:</strong></td><td><span class="text-primary">₹${report.summary.total_approved_amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6 class="fw-bold">Recent Requests</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Title</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${report.requests.slice(0, 5).map(request => {
+                                        let amount = '0.00';
+                                        try {
+                                            const requestData = JSON.parse(request.request_data);
+                                            amount = parseFloat(requestData.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                                        } catch (e) {
+                                            console.warn('Error parsing request data for request', request.id, e);
+                                            amount = 'N/A';
+                                        }
+                                        return `
+                                        <tr>
+                                            <td><span class="badge ${request.request_type === 'expense' ? 'bg-warning' : 'bg-info'}">${request.request_type}</span></td>
+                                            <td>${request.title || 'N/A'}</td>
+                                            <td>₹${amount}</td>
+                                            <td><span class="badge ${request.status === 'approved' ? 'bg-success' : request.status === 'rejected' ? 'bg-danger' : 'bg-warning'}">${request.status}</span></td>
+                                            <td>${formatDate(request.created_at)}</td>
+                                        </tr>
+                                    `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ${report.requests.length > 5 ? `<p class="text-muted small">Showing 5 of ${report.requests.length} requests. Download full report for complete details.</p>` : ''}
+                    </div>
+                `;
+                
+            } else {
+                console.error('API returned error:', data.message);
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Error loading sub user details: ${data.message || 'Unknown error'}
+                    </div>
+                `;
+                showAlert('Error loading sub user details: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error loading sub user details: ${error.message}
+                </div>
+            `;
+            showAlert('Error loading sub user details: ' + error.message, 'danger');
+        });
+}
+
+// Reset sub user password
+function resetPassword(subUserId) {
+    if (confirm('Are you sure you want to reset this sub user\'s password? They will need to use the new password to login.')) {
+        fetch(`/api/sub-users/${subUserId}/reset-password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show new password in modal
+                const modalBody = document.getElementById('resetPasswordModalBody');
+                modalBody.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Password reset successfully for <strong>${data.sub_user_name}</strong>!
+                    </div>
+                    <div class="generated-credentials">
+                        <div class="credential-item">
+                            <span class="credential-label">New Password:</span>
+                            <span class="credential-value" id="newPassword">${data.new_password}</span>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> Please share this new password securely with the sub user. The password cannot be recovered.
+                    </div>
+                `;
+                
+                const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+                modal.show();
+                
+                showAlert('Password reset successfully!', 'success');
+            } else {
+                showAlert('Error resetting password: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error resetting password', 'danger');
+        });
+    }
+}
+
+// Toggle sub user status
+function toggleSubUserStatus(subUserId, currentStatus) {
+    const action = currentStatus ? 'deactivate' : 'activate';
+    const newStatus = !currentStatus;
+    
+    if (confirm(`Are you sure you want to ${action} this sub user?`)) {
+        fetch(`/api/sub-users/${subUserId}/toggle-status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ is_active: newStatus })
+        })
+        .then(response => {
+            console.log('Toggle status response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Toggle status response data:', data);
+            if (data.success) {
+                loadSubUsers();
+                showAlert(`Sub user ${action}d successfully!`, 'success');
+            } else {
+                showAlert(`Error ${action}ing sub user: ` + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert(`Error ${action}ing sub user`, 'danger');
+        });
+    }
+}
+
+// Delete sub user
+function deleteSubUser(subUserId) {
+    currentSubUserId = subUserId;
+    const modal = new bootstrap.Modal(document.getElementById('deleteSubUserModal'));
+    modal.show();
+}
+
+// Confirm delete
+document.getElementById('confirmDeleteSubUser').addEventListener('click', function() {
+    if (currentSubUserId) {
+        fetch(`/api/sub-users/${currentSubUserId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadSubUsers();
+                loadSubUserStats(); // Refresh stats
+                showAlert('Sub user deleted successfully!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('deleteSubUserModal')).hide();
+            } else {
+                showAlert('Error deleting sub user: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error deleting sub user', 'danger');
+        });
+    }
+});
+
+// Copy functionality removed as requested
+
+// Toggle search functionality
+function toggleSearch() {
+    const filtersSection = document.getElementById('filtersSection');
+    const searchBtn = document.getElementById('searchToggleBtn');
+    
+    if (filtersSection.style.display === 'none') {
+        filtersSection.style.display = 'block';
+        searchBtn.classList.add('active');
+    } else {
+        filtersSection.style.display = 'none';
+        searchBtn.classList.remove('active');
+    }
+}
+
+// Filter sub users
+function filterSubUsers() {
+    const subUserIdFilter = document.getElementById('filterSubUserId').value.toLowerCase();
+    const nameFilter = document.getElementById('filterName').value.toLowerCase();
+    const statusFilter = document.getElementById('filterStatus').value;
+    const dateFilter = document.getElementById('filterDateFrom').value;
+    
+    const rows = document.querySelectorAll('#subUsersTableBody tr');
+    
+    rows.forEach(row => {
+        const subUserId = row.cells[0]?.textContent.toLowerCase() || '';
+        const name = row.cells[1]?.textContent.toLowerCase() || '';
+        const status = row.cells[4]?.textContent.toLowerCase() || '';
+        const date = row.cells[3]?.textContent || '';
+        
+        const matchesSubUserId = !subUserIdFilter || subUserId.includes(subUserIdFilter);
+        const matchesName = !nameFilter || name.includes(nameFilter);
+        const matchesStatus = !statusFilter || status.includes(statusFilter);
+        const matchesDate = !dateFilter || date.includes(dateFilter);
+        
+        if (matchesSubUserId && matchesName && matchesStatus && matchesDate) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Clear sub user filters
+function clearSubUserFilters() {
+    document.getElementById('filterSubUserId').value = '';
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterDateFrom').value = '';
+    filterSubUsers();
+}
+
+// Update metric cards
+function updateMetricCards() {
+    // Update total sub users (count all rows, excluding empty state)
+    const allSubUserRows = document.querySelectorAll('#subUsersTableBody tr');
+    const totalSubUsers = Array.from(allSubUserRows).filter(row => 
+        !row.querySelector('td[colspan]') // Exclude empty state rows
+    ).length;
+    document.getElementById('totalSubUsers').textContent = totalSubUsers;
+    
+    // Update active sub users (count rows with active status)
+    const activeSubUserRows = document.querySelectorAll('#subUsersTableBody tr');
+    const activeSubUsers = Array.from(activeSubUserRows).filter(row => {
+        const statusBadge = row.querySelector('.status-badge');
+        return statusBadge && statusBadge.textContent.trim() === 'Active';
+    }).length;
+    document.getElementById('activeSubUsers').textContent = activeSubUsers;
+    
+    // Update pending requests (count all rows, excluding empty state)
+    const allRequestRows = document.querySelectorAll('#pendingRequestsTableBody tr');
+    const pendingRequests = Array.from(allRequestRows).filter(row => 
+        !row.querySelector('td[colspan]') // Exclude empty state rows
+    ).length;
+    document.getElementById('pendingRequests').textContent = pendingRequests;
+    
+    // Update inactive sub users (count rows with inactive status)
+    const inactiveSubUserRows = document.querySelectorAll('#subUsersTableBody tr');
+    const inactiveSubUsers = Array.from(inactiveSubUserRows).filter(row => {
+        const statusBadge = row.querySelector('.status-badge');
+        return statusBadge && statusBadge.textContent.trim() === 'Inactive';
+    }).length;
+    document.getElementById('inactiveSubUsers').textContent = inactiveSubUsers;
+}
+
+// Show alert
+function showAlert(message, type) {
+    // Create notification container if it doesn't exist
+    let notificationContainer = document.querySelector('.notification-container');
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.className = 'notification-container';
+        document.body.appendChild(notificationContainer);
+    }
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show notification-toast`;
+    alertDiv.setAttribute('role', 'alert');
+    
+    // Add icon based on type
+    let icon = '';
+    switch(type) {
+        case 'success':
+            icon = '<i class="fas fa-check-circle me-2"></i>';
+            break;
+        case 'danger':
+            icon = '<i class="fas fa-exclamation-circle me-2"></i>';
+            break;
+        case 'warning':
+            icon = '<i class="fas fa-exclamation-triangle me-2"></i>';
+            break;
+        case 'info':
+            icon = '<i class="fas fa-info-circle me-2"></i>';
+            break;
+    }
+    
+    alertDiv.innerHTML = `
+        ${icon}${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Add to notification container
+    notificationContainer.appendChild(alertDiv);
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.classList.remove('show');
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 300);
+        }
+    }, 4000);
+}
+
+// Load pending requests (including invoice download approvals)
+async function loadPendingRequests() {
+    console.log('DEBUG: Starting to load pending requests...');
+    try {
+        // Load both expense/transaction requests and invoice download approvals
+        console.log('DEBUG: Making API calls to fetch pending requests...');
+        console.log('DEBUG: Current URL:', window.location.href);
+        console.log('DEBUG: Current session cookies:', document.cookie);
+        
+        const [expenseResponse, invoiceResponse, outInvoiceResponse] = await Promise.all([
+            fetch('/api/sub-user-requests/pending'),
+            fetch('/api/invoice-download-approvals/pending'),
+            fetch('/api/sub-user/pending-out-invoices')
+        ]);
+        
+        console.log('DEBUG: API responses received:');
+        console.log('Expense response status:', expenseResponse.status);
+        console.log('Expense response headers:', Object.fromEntries(expenseResponse.headers.entries()));
+        console.log('Invoice response status:', invoiceResponse.status);
+        console.log('Invoice response headers:', Object.fromEntries(invoiceResponse.headers.entries()));
+        console.log('OUT Invoice response status:', outInvoiceResponse.status);
+        console.log('OUT Invoice response headers:', Object.fromEntries(outInvoiceResponse.headers.entries()));
+        
+        // Check if responses are redirecting to login
+        if (expenseResponse.redirected) {
+            console.log('DEBUG: Expense request was redirected to:', expenseResponse.url);
+        }
+        if (invoiceResponse.redirected) {
+            console.log('DEBUG: Invoice request was redirected to:', invoiceResponse.url);
+        }
+        if (outInvoiceResponse.redirected) {
+            console.log('DEBUG: OUT Invoice request was redirected to:', outInvoiceResponse.url);
+        }
+
+        let allRequests = [];
+
+        // Add expense/transaction requests
+        if (expenseResponse.ok) {
+            const expenseData = await expenseResponse.json();
+            console.log('DEBUG: Expense data received:', expenseData);
+            if (expenseData.success) {
+                const expenseRequests = expenseData.requests.map(req => ({
+                    ...req,
+                    request_category: 'expense'
+                }));
+                console.log('DEBUG: Processed expense requests:', expenseRequests);
+                allRequests = allRequests.concat(expenseRequests);
+            }
+        } else if (expenseResponse.status === 401) {
+            console.error('DEBUG: Authentication failed for expense requests');
+            showAlert('Session expired. Please log in again to view requests.', 'warning');
+            setTimeout(() => window.location.href = '/login', 2000);
+            return;
+        } else {
+            console.error('DEBUG: Expense API call failed:', expenseResponse.status, expenseResponse.statusText);
+            try {
+                const errorText = await expenseResponse.text();
+                console.error('DEBUG: Expense response body:', errorText.substring(0, 500));
+            } catch (e) {
+                console.error('DEBUG: Could not read expense response body:', e);
+            }
+        }
+
+        // Add invoice download approval requests
+        if (invoiceResponse.ok) {
+            const invoiceData = await invoiceResponse.json();
+            console.log('DEBUG: Invoice data received:', invoiceData);
+            if (invoiceData.success) {
+                const invoiceRequests = invoiceData.requests.map(req => ({
+                    ...req,
+                    request_category: 'invoice_download',
+                    request_type: 'invoice_download',
+                    title: `Download: ${req.invoice_number}`,
+                    amount: req.total_amount,
+                    invoice_id: req.invoice_db_id || req.invoice_id
+                }));
+                console.log('DEBUG: Processed invoice requests:', invoiceRequests);
+                allRequests = allRequests.concat(invoiceRequests);
+            }
+        } else if (invoiceResponse.status === 401) {
+            console.error('DEBUG: Authentication failed for invoice download requests');
+            showAlert('Session expired. Please log in again to view requests.', 'warning');
+            setTimeout(() => window.location.href = '/login', 2000);
+            return;
+        } else {
+            console.error('DEBUG: Invoice download API call failed:', invoiceResponse.status, invoiceResponse.statusText);
+            try {
+                const errorText = await invoiceResponse.text();
+                console.error('DEBUG: Invoice response body:', errorText.substring(0, 500));
+            } catch (e) {
+                console.error('DEBUG: Could not read invoice response body:', e);
+            }
+        }
+
+        // Add pending OUT invoice approvals
+        if (outInvoiceResponse.ok) {
+            const outInvoiceData = await outInvoiceResponse.json();
+            console.log('DEBUG: OUT Invoice data received:', outInvoiceData);
+            if (outInvoiceData.success && outInvoiceData.pending_invoices) {
+                const outInvoiceRequests = outInvoiceData.pending_invoices.map(invoice => ({
+                    ...invoice,
+                    request_category: 'out_invoice_approval',
+                    request_type: 'out_invoice_approval',
+                    title: `OUT Invoice: ${invoice.invoice_number}`,
+                    amount: invoice.total_amount,
+                    client_name: invoice.client_name,
+                    invoice_number: invoice.invoice_number,
+                    invoice_type: 'out'
+                }));
+                console.log('DEBUG: Processed OUT invoice requests:', outInvoiceRequests);
+                allRequests = allRequests.concat(outInvoiceRequests);
+            }
+        } else if (outInvoiceResponse.status === 401) {
+            console.error('DEBUG: Authentication failed for OUT invoice requests');
+            showAlert('Session expired. Please log in again to view requests.', 'warning');
+            setTimeout(() => window.location.href = '/login', 2000);
+            return;
+        } else {
+            console.error('DEBUG: OUT Invoice API call failed:', outInvoiceResponse.status, outInvoiceResponse.statusText);
+            try {
+                const errorText = await outInvoiceResponse.text();
+                console.error('DEBUG: OUT Invoice response body:', errorText.substring(0, 500));
+            } catch (e) {
+                console.error('DEBUG: Could not read OUT invoice response body:', e);
+            }
+        }
+
+        console.log('DEBUG: Total requests to display:', allRequests.length);
+        console.log('DEBUG: All requests array:', allRequests);
+        displayPendingRequests(allRequests);
+    } catch (error) {
+        console.error('DEBUG: Error loading pending requests:', error);
+        console.error('DEBUG: Error stack:', error.stack);
+        showAlert('Error loading pending requests: ' + error.message, 'danger');
+    }
+}
+
+// Global variable to store pending requests
+let pendingRequests = [];
+
+// Display pending requests
+function displayPendingRequests(requests) {
+    // Store requests globally for viewRequestDetails function
+    pendingRequests = requests;
+    console.log('DEBUG: Storing pending requests globally:', requests);
+    console.log('DEBUG: Total requests stored:', requests.length);
+    
+    const tbody = document.getElementById('pendingRequestsTableBody');
+    console.log('DEBUG: Found table body element:', tbody);
+    if (!tbody) {
+        console.error('DEBUG: pendingRequestsTableBody element not found!');
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    console.log('DEBUG: Cleared table body, displaying', requests.length, 'requests');
+    
+    if (requests.length === 0) {
+        console.log('DEBUG: No requests to display');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    <i class="fas fa-check-circle fa-2x mb-2 d-block"></i>
+                    No pending requests found.
+                </td>
+            </tr>
+        `;
+        // Update metric cards even when no requests
+        updateMetricCards();
+        return;
+    }
+    
+    requests.forEach((request, index) => {
+        console.log(`DEBUG: Processing request ${index + 1}:`, request);
+        const row = document.createElement('tr');
+        let typeBadge, typeText;
+        
+        if (request.request_category === 'invoice_download') {
+            typeBadge = 'bg-primary';
+            typeText = 'Invoice Download';
+        } else if (request.request_category === 'out_invoice_approval') {
+            typeBadge = 'bg-success';
+            typeText = 'OUT Invoice Approval';
+        } else {
+            typeBadge = request.request_type === 'expense' ? 'bg-warning' : 'bg-info';
+            typeText = request.request_type === 'expense' ? 'Expense' : 'Transaction';
+        }
+        
+        // Parse request data to get payment details
+        let paymentDetails = '';
+        
+        if (request.request_category === 'invoice_download') {
+            // For invoice download requests, show invoice type and amount
+            paymentDetails = `
+                <div class="payment-details">
+                    <span class="badge bg-info mb-1"><i class="fas fa-file-invoice me-1"></i>Invoice Download</span>
+                    <div class="small text-muted">
+                        <div><strong>Invoice:</strong> ${request.invoice_number}</div>
+                        <div><strong>Client:</strong> ${request.client_name}</div>
+                        <div><strong>Type:</strong> ${request.invoice_type === 'in' ? 'Invoice IN' : 'Invoice OUT'}</div>
+                        <div><strong>Amount:</strong> ₹${parseFloat(request.total_amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                    </div>
+                </div>
+            `;
+        } else if (request.request_category === 'out_invoice_approval') {
+            // For OUT invoice approval requests, show invoice details
+            paymentDetails = `
+                <div class="payment-details">
+                    <span class="badge bg-success mb-1"><i class="fas fa-file-invoice-dollar me-1"></i>Awaiting Payment</span>
+                    <div class="small text-muted">
+                        <div><strong>Client:</strong> ${request.client_name}</div>
+                        <div><strong>Invoice:</strong> ${request.invoice_number}</div>
+                        <div><strong>Date:</strong> ${new Date(request.invoice_date).toLocaleDateString()}</div>
+                        <div><strong>Status:</strong> <span class="badge bg-warning text-dark">Pending</span></div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // For expense/transaction requests, parse the existing payment details
+            try {
+                const requestData = JSON.parse(request.request_data);
+                const paymentMethod = requestData.payment_method || 'cash';
+                
+                if (paymentMethod === 'cash') {
+                    paymentDetails = '<span class="badge bg-secondary"><i class="fas fa-money-bill-wave me-1"></i>Cash</span>';
+                } else if (paymentMethod === 'online') {
+                    const bankAccountType = requestData.bank_account_type;
+                    if (bankAccountType === 'own') {
+                        paymentDetails = '<span class="badge bg-primary"><i class="fas fa-university me-1"></i>Own Account</span>';
+                    } else if (bankAccountType === 'vendor' && requestData.vendor_bank_details) {
+                        const vendorDetails = requestData.vendor_bank_details;
+                        paymentDetails = `
+                            <div class="payment-details">
+                                <span class="badge bg-info mb-1"><i class="fas fa-building me-1"></i>Vendor Account</span>
+                                <div class="small text-muted">
+                                    <div><strong>${vendorDetails.bank_name || 'N/A'}</strong></div>
+                                    <div>A/C: ${vendorDetails.account_number || 'N/A'}</div>
+                                    <div>IFSC: ${vendorDetails.ifsc_code || 'N/A'}</div>
+                                    <div>Holder: ${vendorDetails.account_holder_name || 'N/A'}</div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (bankAccountType === 'vendor') {
+                        // Vendor account selected but no details provided
+                        paymentDetails = '<span class="badge bg-warning"><i class="fas fa-building me-1"></i>Vendor Account (No Details)</span>';
+                    } else {
+                        // Online payment but no bank account type specified (legacy requests)
+                        paymentDetails = '<span class="badge bg-info"><i class="fas fa-university me-1"></i>Online Payment</span>';
+                    }
+                } else {
+                    paymentDetails = `<span class="badge bg-secondary">${paymentMethod}</span>`;
+                }
+            } catch (e) {
+                console.error('Error parsing request data:', e);
+                // Fallback for any parsing errors
+                paymentDetails = '<span class="badge bg-secondary"><i class="fas fa-question me-1"></i>Unknown</span>';
+            }
+        }
+        
+        console.log(`DEBUG: Creating row for request ID ${request.id} with title "${request.title}"`);
+        const formattedDate = formatDate(request.created_at);
+        
+        row.innerHTML = `
+            <td>
+                <strong>${request.sub_user_name}</strong><br>
+                <small class="text-muted">${request.sub_user_id}</small>
+            </td>
+            <td>
+                <span class="badge ${typeBadge}">${typeText}</span>
+            </td>
+            <td>${request.title}</td>
+            <td>₹${parseFloat(request.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+            <td>${paymentDetails}</td>
+            <td>${formattedDate}</td>
+            <td>
+                ${request.request_category === 'invoice_download' ? 
+                    `<button class="btn btn-sm btn-success me-1" onclick="approveInvoiceDownloadRequest(${request.id})" title="Approve">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger me-1" onclick="rejectInvoiceDownloadRequest(${request.id})" title="Reject">
+                        <i class="fas fa-times"></i>
+                    </button>`
+                    : request.request_category === 'out_invoice_approval' ?
+                    `<button class="btn btn-sm btn-success me-1" onclick="showOutInvoiceApprovalModal(${request.id})" title="Approve with Payment">
+                        <i class="fas fa-credit-card"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger me-1" onclick="rejectOutInvoice(${request.id})" title="Reject Invoice">
+                        <i class="fas fa-times"></i>
+                    </button>`
+                    :
+                    `<button class="btn btn-sm btn-success me-1" onclick="approveRequest(${request.id})" title="Approve">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger me-1" onclick="rejectRequest(${request.id})" title="Reject">
+                        <i class="fas fa-times"></i>
+                    </button>`
+                }
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update metric cards after displaying pending requests
+    updateMetricCards();
+    console.log('DEBUG: Finished displaying pending requests');
+}
+
+// Debug function - can be called from browser console
+window.debugPendingRequests = function() {
+    console.log('=== DEBUG PENDING REQUESTS ===');
+    console.log('Global pendingRequests array:', pendingRequests);
+    console.log('Array length:', pendingRequests.length);
+    
+    if (pendingRequests.length > 0) {
+        console.log('First request sample:', pendingRequests[0]);
+        console.log('Request IDs:', pendingRequests.map(r => r.id));
+        console.log('Request categories:', pendingRequests.map(r => r.request_category));
+        
+        // Test eye button functionality with first request
+        if (pendingRequests[0]) {
+            console.log('Testing viewRequestDetails with first request ID:', pendingRequests[0].id);
+            // Don't actually call it, just show what would be called
+            console.log('Would call: viewRequestDetails(' + pendingRequests[0].id + ')');
+        }
+    } else {
+        console.log('No pending requests found');
+        console.log('Trying to reload pending requests...');
+        loadPendingRequests();
+    }
+};
+
+// Helper function to format dates safely
+function formatDate(dateString) {
+    try {
+        console.log('DEBUG: formatDate called with:', dateString, 'Type:', typeof dateString);
+        
+        if (!dateString || dateString === 'null' || dateString === 'undefined') {
+            console.log('DEBUG: Date is null/undefined/empty, returning N/A');
+            return 'N/A';
+        }
+        
+        // Handle different date formats
+        const date = new Date(dateString);
+        console.log('DEBUG: Created Date object:', date);
+        
+        if (isNaN(date.getTime())) {
+            console.warn('DEBUG: Invalid date string:', dateString);
+            return 'Invalid Date';
+        }
+        
+        const formatted = date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit', 
+            year: 'numeric'
+        });
+        console.log('DEBUG: Formatted date:', formatted);
+        return formatted;
+    } catch (error) {
+        console.error('DEBUG: Error formatting date:', error, 'Input:', dateString);
+        return 'Invalid Date';
+    }
+}
+
+// Auto-debug after 3 seconds
+setTimeout(() => {
+    console.log('=== AUTO DEBUG CHECK ===');
+    window.debugPendingRequests();
+}, 3000);
+
+// Test function for manual modal testing
+window.testModal = function() {
+    console.log('Testing modal functionality...');
+    const testModalHtml = `
+        <div class="modal fade" id="testModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Test Modal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>This is a test modal. If you can see this, the modal system is working.</p>
+                        <p>Pending requests: ${pendingRequests ? pendingRequests.length : 'null'}</p>
+                        <p>First request ID: ${pendingRequests && pendingRequests.length > 0 ? pendingRequests[0].id : 'None'}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing test modal
+    const existing = document.getElementById('testModal');
+    if (existing) existing.remove();
+    
+    document.body.insertAdjacentHTML('beforeend', testModalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('testModal'));
+    modal.show();
+    console.log('Test modal should be visible now');
+};
+
+// Manual test of date formatting
+window.testDateFormatting = function() {
+    console.log('=== TESTING DATE FORMATTING ===');
+    const testDates = [
+        '2025-09-11 10:30:00',
+        '2025-09-11T10:30:00Z',
+        '2025-09-11',
+        null,
+        undefined,
+        '',
+        'invalid-date',
+        1726047000000, // timestamp
+        new Date().toISOString()
+    ];
+    
+    testDates.forEach(date => {
+        console.log(`Input: ${date} => Output: ${formatDate(date)}`);
+    });
+};
+
+// Test pending requests structure
+window.inspectPendingRequests = function() {
+    console.log('=== INSPECTING PENDING REQUESTS ===');
+    console.log('pendingRequests variable:', pendingRequests);
+    if (pendingRequests && pendingRequests.length > 0) {
+        console.log('First request structure:', Object.keys(pendingRequests[0]));
+        console.log('First request created_at:', pendingRequests[0].created_at);
+        console.log('Formatted date:', formatDate(pendingRequests[0].created_at));
+    }
+};
+
+// Test authentication status
+window.testAuth = async function() {
+    console.log('=== TESTING AUTHENTICATION ===');
+    try {
+        const response = await fetch('/api/sub-users/stats');
+        console.log('Auth test response status:', response.status);
+        console.log('Auth test response headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Auth test: SUCCESS - user is authenticated');
+            console.log('User data:', data);
+            return true;
+        } else {
+            console.log('Auth test: FAILED - user not authenticated');
+            const text = await response.text();
+            console.log('Error response:', text.substring(0, 500));
+            return false;
+        }
+    } catch (error) {
+        console.error('Auth test error:', error);
+        return false;
+    }
+};
+
+// Approve request
+// Professional Confirmation Modal Functions
+function showConfirmationModal(options) {
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    
+    // Set modal content
+    document.getElementById('confirmationTitle').textContent = options.title || 'Confirm Action';
+    document.getElementById('confirmationMessage').textContent = options.message || 'Are you sure you want to proceed?';
+    
+    // Set icon based on type
+    const icon = document.querySelector('#confirmationModal .confirmation-icon i');
+    if (options.type === 'approve') {
+        icon.className = 'fas fa-check-circle';
+        document.getElementById('confirmationConfirmBtn').className = 'btn btn-success';
+        document.getElementById('confirmationConfirmBtn').innerHTML = '<i class="fas fa-check me-2"></i>Approve';
+    } else if (options.type === 'reject') {
+        icon.className = 'fas fa-times-circle';
+        document.getElementById('confirmationConfirmBtn').className = 'btn btn-danger';
+        document.getElementById('confirmationConfirmBtn').innerHTML = '<i class="fas fa-times me-2"></i>Reject';
+    } else {
+        icon.className = 'fas fa-question-circle';
+        document.getElementById('confirmationConfirmBtn').className = 'btn btn-primary';
+        document.getElementById('confirmationConfirmBtn').innerHTML = '<i class="fas fa-check me-2"></i>Confirm';
+    }
+    
+    // Show request details if provided
+    if (options.requestDetails) {
+        document.getElementById('confirmationDetails').style.display = 'block';
+        document.getElementById('confirmationRequestInfo').innerHTML = options.requestDetails;
+    } else {
+        document.getElementById('confirmationDetails').style.display = 'none';
+    }
+    
+    // Set up confirm button action
+    const confirmBtn = document.getElementById('confirmationConfirmBtn');
+    confirmBtn.onclick = options.onConfirm;
+    
+    // Show modal
+    modal.show();
+}
+
+function approveRequest(requestId) {
+    console.log('Approving request:', requestId);
+    
+    // Find the request data
+    const request = pendingRequests.find(r => r.id === requestId);
+    if (!request) {
+        showAlert('Request not found', 'danger');
+        return;
+    }
+    
+    // For expense requests, show bank selection modal like invoices
+    if (request.request_type === 'expense') {
+        showExpenseApprovalModal(requestId);
+        return;
+    }
+    
+    // For other request types, use the old approval flow
+    let requestDetails = '';
+    if (request) {
+        try {
+            const requestData = JSON.parse(request.request_data);
+            requestDetails = `
+                <div class="row">
+                    <div class="col-6"><strong>Title:</strong> ${requestData.title || 'N/A'}</div>
+                    <div class="col-6"><strong>Amount:</strong> ₹${parseFloat(requestData.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                    <div class="col-6"><strong>Category:</strong> ${requestData.category || 'N/A'}</div>
+                    <div class="col-6"><strong>Date:</strong> ${formatDate(requestData.expense_date || request.created_at)}</div>
+                    <div class="col-12"><strong>Description:</strong> ${requestData.description || 'No description provided'}</div>
+                </div>
+            `;
+        } catch (e) {
+            requestDetails = '<p class="text-muted">Request details could not be loaded.</p>';
+        }
+    }
+    
+    showConfirmationModal({
+        type: 'approve',
+        title: 'Approve Request',
+        message: 'Are you sure you want to approve this request?',
+        requestDetails: requestDetails,
+        onConfirm: function() {
+            console.log('User confirmed approval for request:', requestId);
+            
+            // Close modal first
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+            modal.hide();
+            
+            // Show loading state
+            showAlert('Processing approval...', 'info');
+            
+            fetch(`/api/sub-user-requests/${requestId}/approve`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    loadPendingRequests();
+                    loadSubUsers(); // Refresh sub users in case of status changes
+                    loadSubUserStats(); // Refresh stats
+                    showAlert('Request approved successfully!', 'success');
+                } else {
+                    showAlert('Error approving request: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error approving request', 'danger');
+            });
+        }
+    });
+}
+
+// Reject request with professional modal
+function rejectRequest(requestId) {
+    console.log('Rejecting request:', requestId);
+    
+    // Find the request data to show details
+    const request = pendingRequests.find(r => r.id === requestId);
+    let requestDetails = '';
+    
+    if (request) {
+        try {
+            const requestData = JSON.parse(request.request_data);
+            requestDetails = `
+                <div class="row">
+                    <div class="col-6"><strong>Title:</strong> ${requestData.title || 'N/A'}</div>
+                    <div class="col-6"><strong>Amount:</strong> ₹${parseFloat(requestData.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                    <div class="col-6"><strong>Category:</strong> ${requestData.category || 'N/A'}</div>
+                    <div class="col-6"><strong>Date:</strong> ${formatDate(requestData.expense_date || request.created_at)}</div>
+                    <div class="col-12"><strong>Description:</strong> ${requestData.description || 'No description provided'}</div>
+                </div>
+            `;
+        } catch (e) {
+            requestDetails = '<p class="text-muted">Request details could not be loaded.</p>';
+        }
+    }
+    
+    showConfirmationModal({
+        type: 'reject',
+        title: 'Reject Request',
+        message: 'Are you sure you want to reject this expense request? This action cannot be undone.',
+        requestDetails: requestDetails,
+        onConfirm: function() {
+            console.log('User confirmed rejection for request:', requestId);
+            
+            // Close modal first
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+            modal.hide();
+            
+            // Show loading state
+            showAlert('Processing rejection...', 'info');
+            
+            // For now, we'll use a simple rejection without reason
+            // You can enhance this later to include a reason input
+            const reason = 'Rejected by main user';
+            
+            fetch(`/api/sub-user-requests/${requestId}/reject`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ reason: reason || '' })
+            })
+            .then(response => {
+                console.log('Reject response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Reject response data:', data);
+                if (data.success) {
+                    loadPendingRequests();
+                    loadSubUserStats(); // Refresh stats
+                    showAlert('Request rejected successfully!', 'success');
+                } else {
+                    showAlert('Error rejecting request: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error rejecting request', 'danger');
+            });
+        }
+    });
+}
+
+// Approve invoice download request
+function approveInvoiceDownloadRequest(approvalId) {
+    console.log('Approving invoice download request:', approvalId);
+    
+    // Find the request data
+    const request = pendingRequests.find(r => r.id === approvalId && r.request_category === 'invoice_download');
+    if (request && (request.invoice_type === 'out' || request.invoice_type === 'OUT')) {
+        // For OUT invoices, open the enhanced modal with bank/cash selection
+        const requestData = {
+            invoice_type: (request.invoice_type || 'out').toLowerCase(),
+            amount: request.total_amount,
+            invoice_id: request.invoice_id,
+            client_name: request.client_name
+        };
+        showInvoiceDownloadModal(approvalId, request, requestData);
+        return;
+    }
+    
+    // Default flow (IN invoices): simple approval confirmation
+    // Find the request data to show details
+    let requestDetails = '';
+    if (request) {
+        requestDetails = `
+            <div class="row">
+                <div class="col-6"><strong>Invoice Number:</strong> ${request.invoice_number || 'N/A'}</div>
+                <div class="col-6"><strong>Client:</strong> ${request.client_name || 'N/A'}</div>
+                <div class="col-6"><strong>Type:</strong> ${request.invoice_type === 'in' ? 'Invoice IN' : 'Invoice OUT'}</div>
+                <div class="col-6"><strong>Amount:</strong> ₹${parseFloat(request.total_amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                <div class="col-12"><strong>Sub User:</strong> ${request.sub_user_name || 'N/A'}</div>
+            </div>
+        `;
+    }
+    
+    showConfirmationModal({
+        type: 'approve',
+        title: 'Approve Invoice Download',
+        message: 'Are you sure you want to approve this invoice download request?',
+        requestDetails: requestDetails,
+        onConfirm: function() {
+            console.log('User confirmed approval for request:', approvalId);
+            
+            // Close modal first
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+            modal.hide();
+            
+            // Show loading state
+            showAlert('Processing approval...', 'info');
+            
+            fetch(`/api/invoice-download-approvals/${approvalId}/approve`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadPendingRequests(); // Refresh the pending requests
+                    loadSubUserStats(); // Refresh stats
+                    showAlert('Invoice download approved successfully!', 'success');
+                } else {
+                    showAlert('Error approving download request: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error approving download request', 'danger');
+            });
+        }
+    });
+}
+
+// Reject invoice download request
+function rejectInvoiceDownloadRequest(approvalId) {
+    console.log('Rejecting invoice download request:', approvalId);
+    
+    // Find the request data to show details
+    const request = pendingRequests.find(r => r.id === approvalId && r.request_category === 'invoice_download');
+    let requestDetails = '';
+    
+    if (request) {
+        requestDetails = `
+            <div class="row">
+                <div class="col-6"><strong>Invoice Number:</strong> ${request.invoice_number || 'N/A'}</div>
+                <div class="col-6"><strong>Client:</strong> ${request.client_name || 'N/A'}</div>
+                <div class="col-6"><strong>Type:</strong> ${request.invoice_type === 'in' ? 'Invoice IN' : 'Invoice OUT'}</div>
+                <div class="col-6"><strong>Amount:</strong> ₹${parseFloat(request.total_amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                <div class="col-12"><strong>Sub User:</strong> ${request.sub_user_name || 'N/A'}</div>
+            </div>
+        `;
+    }
+    
+    showConfirmationModal({
+        type: 'reject',
+        title: 'Reject Invoice Download',
+        message: 'Are you sure you want to reject this invoice download request? This action cannot be undone.',
+        requestDetails: requestDetails,
+        onConfirm: function() {
+            console.log('User confirmed rejection for request:', approvalId);
+            
+            // Close modal first
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+            modal.hide();
+            
+            // Show loading state
+            showAlert('Processing rejection...', 'info');
+            
+            const reason = 'Rejected by main user';
+            
+            fetch(`/api/invoice-download-approvals/${approvalId}/reject`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ reason: reason || '' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadPendingRequests(); // Refresh the pending requests
+                    loadSubUserStats(); // Refresh stats
+                    showAlert('Invoice download rejected successfully!', 'success');
+                } else {
+                    showAlert('Error rejecting download request: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error rejecting download request', 'danger');
+            });
+        }
+    });
+}
+
+// Download sub user report
+function downloadReport(subUserId) {
+    fetch(`/api/sub-users/${subUserId}/report`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const report = data.report;
+                
+                // Create CSV content
+                let csvContent = `Sub User Report - ${report.sub_user_info.name}\n`;
+                csvContent += `Generated on: ${new Date().toLocaleString()}\n\n`;
+                
+                // Basic Information
+                csvContent += `BASIC INFORMATION\n`;
+                csvContent += `Sub User ID,${report.sub_user_info.sub_user_id}\n`;
+                csvContent += `Name,${report.sub_user_info.name}\n`;
+                csvContent += `Email,${report.sub_user_info.email || 'Not provided'}\n`;
+                csvContent += `Status,${report.sub_user_info.is_active ? 'Active' : 'Inactive'}\n`;
+                csvContent += `Created,${report.sub_user_info.created_at}\n`;
+                csvContent += `Created By,${report.sub_user_info.created_by}\n\n`;
+                
+                // Summary
+                csvContent += `ACTIVITY SUMMARY\n`;
+                csvContent += `Total Requests,${report.summary.total_requests}\n`;
+                csvContent += `Approved Requests,${report.summary.approved_requests}\n`;
+                csvContent += `Rejected Requests,${report.summary.rejected_requests}\n`;
+                csvContent += `Pending Requests,${report.summary.pending_requests}\n`;
+                csvContent += `Total Approved Amount,₹${report.summary.total_approved_amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}\n\n`;
+                
+                // All Requests
+                csvContent += `ALL REQUESTS\n`;
+                csvContent += `Type,Title,Amount,Status,Created Date,Unique ID\n`;
+                report.requests.forEach(request => {
+                    const requestData = JSON.parse(request.request_data);
+                    csvContent += `${request.request_type},${request.title},₹${parseFloat(requestData.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})},${request.status},${formatDate(request.created_at)},${request.unique_id || 'N/A'}\n`;
+                });
+                
+                csvContent += `\nAPPROVED TRANSACTIONS\n`;
+                csvContent += `Title,Amount,Type,Date,Unique ID\n`;
+                report.approved_transactions.forEach(transaction => {
+                    csvContent += `${transaction.title},₹${parseFloat(transaction.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})},${transaction.transaction_type},${new Date(transaction.transaction_date).toLocaleDateString()},${transaction.unique_id}\n`;
+                });
+                
+                csvContent += `\nAPPROVED EXPENSES\n`;
+                csvContent += `Title,Amount,Category,Date,Unique ID\n`;
+                report.approved_expenses.forEach(expense => {
+                    csvContent += `${expense.title},₹${parseFloat(expense.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})},${expense.category},${new Date(expense.expense_date).toLocaleDateString()},${expense.unique_id}\n`;
+                });
+                
+                // Download the file
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `sub_user_report_${report.sub_user_info.sub_user_id}_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showAlert('Report downloaded successfully!', 'success');
+            } else {
+                showAlert('Error generating report: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error generating report', 'danger');
+        });
+}
+
+// View request details
+function viewRequestDetails(requestId) {
+    console.log('=== VIEW REQUEST DETAILS DEBUG ===');
+    console.log('Called with requestId:', requestId, 'Type:', typeof requestId);
+    console.log('Current pendingRequests array:', pendingRequests);
+    console.log('Array length:', pendingRequests ? pendingRequests.length : 'NULL');
+    
+    if (!pendingRequests) {
+        console.error('DEBUG: pendingRequests array is null/undefined!');
+        showAlert('Error: Pending requests data not loaded. Please refresh the page.', 'danger');
+        return;
+    }
+    
+    // Find the request in local array to see its category
+    const localRequest = pendingRequests.find(r => {
+        console.log('Comparing:', r.id, '(type:', typeof r.id, ') with', requestId, '(type:', typeof requestId, ')');
+        return r.id == requestId || r.id === parseInt(requestId) || String(r.id) === String(requestId);
+    });
+    
+    console.log('Local request found:', localRequest);
+    if (localRequest) {
+        console.log('Request category:', localRequest.request_category);
+        console.log('Request type:', localRequest.request_type);
+        console.log('Request data keys:', Object.keys(localRequest));
+    } else {
+        console.error('DEBUG: Request not found in local array!');
+        console.log('Available IDs:', pendingRequests.map(r => `${r.id} (${typeof r.id})`));
+    }
+    
+    // Show loading modal first
+    const loadingModalHtml = `
+        <div class="modal fade" id="requestDetailsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-eye me-2"></i>Request Details
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading request details...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('requestDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add loading modal and show
+    document.body.insertAdjacentHTML('beforeend', loadingModalHtml);
+    const loadingModal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+    loadingModal.show();
+    
+    // Try to find the request data locally first
+    let request = null;
+    if (pendingRequests && Array.isArray(pendingRequests)) {
+        // Try both string and number comparison for ID matching
+        request = pendingRequests.find(r => r.id == requestId || r.id === parseInt(requestId));
+        console.log('DEBUG: Search result for ID', requestId, ':', request);
+    }
+    
+    if (!request) {
+        console.warn('Request not found in pendingRequests array, fetching from API...');
+        console.log('DEBUG: Looking for request ID:', requestId, 'Type:', typeof requestId);
+        console.log('DEBUG: Available request IDs:', pendingRequests.map(r => ({id: r.id, type: typeof r.id})));
+        
+        // Determine API endpoint based on request category if known
+        let apiEndpoint = `/api/pending-requests/${requestId}`;
+        if (localRequest && localRequest.request_category === 'invoice_download') {
+            apiEndpoint = `/api/invoice-download-approvals/${requestId}`;
+            console.log('DEBUG: Using invoice download approval endpoint');
+        } else {
+            console.log('DEBUG: Using general pending requests endpoint');
+        }
+        
+        console.log('DEBUG: Fetching from API endpoint:', apiEndpoint);
+        
+        // If not found locally, fetch from API
+        fetch(apiEndpoint)
+            .then(response => {
+                console.log('DEBUG: API response status:', response.status);
+                console.log('DEBUG: API response headers:', [...response.headers.entries()]);
+                
+                if (response.status === 401) {
+                    console.error('DEBUG: Authentication failed - user not logged in');
+                    loadingModal.hide();
+                    setTimeout(() => {
+                        const errorModalHtml = `
+                            <div class="modal fade" id="authErrorModal" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning">
+                                            <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Session Expired</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Your session has expired. Please log in again to continue.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button class="btn btn-primary" onclick="window.location.href='/login'">Go to Login</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        document.body.insertAdjacentHTML('beforeend', errorModalHtml);
+                        const authModal = new bootstrap.Modal(document.getElementById('authErrorModal'));
+                        authModal.show();
+                    }, 300);
+                    throw new Error('Authentication required');
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    request = data.request;
+                    console.log('Found request via API:', request);
+                    showRequestDetailsModal(requestId, request);
+                } else {
+                    throw new Error(data.message || 'Failed to fetch request details');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching request details:', error);
+                console.error('Request ID that failed:', requestId);
+                console.error('Available pending requests:', pendingRequests);
+                
+                document.getElementById('requestDetailsModal').querySelector('.modal-body').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Error loading request details: ${error.message}
+                        <br><small>Request ID: ${requestId}</small>
+                        <br><small>Check browser console for more details</small>
+                    </div>
+                `;
+                showAlert('Error loading request details: ' + error.message, 'danger');
+            });
+    } else {
+        console.log('DEBUG: Found request locally:', request);
+        console.log('DEBUG: Request category:', request.request_category);
+        showRequestDetailsModal(requestId, request);
+    }
+}
+
+// Helper function to show request details modal
+function showRequestDetailsModal(requestId, request) {
+    try {
+        const requestData = JSON.parse(request.request_data);
+        const paymentMethod = requestData.payment_method || 'cash';
+        
+        // Handle invoice download requests differently
+        if (request.request_category === 'invoice_download') {
+            showInvoiceDownloadModal(requestId, request, requestData);
+            return;
+        }
+        
+        let paymentDetailsHtml = '';
+        if (paymentMethod === 'cash') {
+            paymentDetailsHtml = `
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-money-bill-wave me-2"></i>Cash Payment</h6>
+                    <p class="mb-0">This expense will be paid in cash.</p>
+                    <div class="mt-2">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Amount will be deducted from your main account balance for cash reimbursement.
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (paymentMethod === 'online') {
+            const bankAccountType = requestData.bank_account_type;
+            if (bankAccountType === 'own') {
+                // For own account, show a message that details will be loaded
+                paymentDetailsHtml = `
+                    <div class="alert alert-primary">
+                        <h6><i class="fas fa-university me-2"></i>Sub User's Own Account</h6>
+                        <div id="ownAccountDetails">
+                            <div class="text-center">
+                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                Loading bank details...
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Important:</strong> Amount will be deducted from your main account balance and transferred to this sub user's account.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (bankAccountType === 'vendor' && requestData.vendor_bank_details) {
+                const vendorDetails = requestData.vendor_bank_details;
+                paymentDetailsHtml = `
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-building me-2"></i>Vendor Bank Account</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Bank Name:</strong><br>
+                                <span class="text-muted">${vendorDetails.bank_name || 'N/A'}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Account Number:</strong><br>
+                                <span class="text-muted">${vendorDetails.account_number || 'N/A'}</span>
+                            </div>
+                            <div class="col-md-6 mt-2">
+                                <strong>IFSC Code:</strong><br>
+                                <span class="text-muted">${vendorDetails.ifsc_code || 'N/A'}</span>
+                            </div>
+                            <div class="col-md-6 mt-2">
+                                <strong>Account Holder:</strong><br>
+                                <span class="text-muted">${vendorDetails.account_holder_name || 'N/A'}</span>
+                            </div>
+                            ${vendorDetails.upi_id ? `
+                            <div class="col-md-6 mt-2">
+                                <strong>UPI ID:</strong><br>
+                                <span class="text-muted">${vendorDetails.upi_id}</span>
+                            </div>
+                            ` : ''}
+                            ${vendorDetails.phone_number ? `
+                            <div class="col-md-6 mt-2">
+                                <strong>Phone Number:</strong><br>
+                                <span class="text-muted">${vendorDetails.phone_number}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="mt-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Important:</strong> Amount will be deducted from your main account balance and transferred to this vendor's account.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (bankAccountType === 'vendor') {
+                paymentDetailsHtml = `
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-building me-2"></i>Vendor Account - Details Missing</h6>
+                        <p class="mb-0">Vendor account was selected but bank details were not provided.</p>
+                    </div>
+                `;
+            } else {
+                // Legacy online payment without bank account type
+                paymentDetailsHtml = `
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-university me-2"></i>Online Payment</h6>
+                        <p class="mb-0">This is an online payment. Bank account details were not specified in this request.</p>
+                    </div>
+                `;
+            }
+        } else {
+            // Unknown payment method
+            paymentDetailsHtml = `
+                <div class="alert alert-secondary">
+                    <h6><i class="fas fa-question me-2"></i>Payment Method: ${paymentMethod}</h6>
+                    <p class="mb-0">Payment method information is not available.</p>
+                </div>
+            `;
+        }
+        
+        // Create and show modal
+        const modalHtml = `
+            <div class="modal fade" id="requestDetailsModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-eye me-2"></i>Request Details
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-user me-2"></i>Sub User</h6>
+                                    <p><strong>${request.sub_user_name}</strong><br>
+                                    <small class="text-muted">${request.sub_user_id}</small></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-tag me-2"></i>Request Type</h6>
+                                    <p><span class="badge ${request.request_type === 'expense' ? 'bg-warning' : 'bg-info'}">${request.request_type}</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-heading me-2"></i>Title</h6>
+                                    <p>${request.title}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-rupee-sign me-2"></i>Amount</h6>
+                                    <p><strong>₹${parseFloat(request.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-calendar me-2"></i>Date</h6>
+                                    <p>${formatDate(request.created_at)}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-clock me-2"></i>Status</h6>
+                                    <p><span class="badge bg-warning">Pending</span></p>
+                                </div>
+                            </div>
+                            
+                            ${requestData.description ? `
+                            <div class="mt-3">
+                                <h6><i class="fas fa-align-left me-2"></i>Description</h6>
+                                <p class="text-muted">${requestData.description}</p>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="mt-3">
+                                <h6><i class="fas fa-credit-card me-2"></i>Payment Information</h6>
+                                ${paymentDetailsHtml}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-success" onclick="approveRequest(${requestId}); bootstrap.Modal.getInstance(document.getElementById('requestDetailsModal')).hide();">
+                                <i class="fas fa-check me-2"></i>Approve
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="rejectRequest(${requestId}); bootstrap.Modal.getInstance(document.getElementById('requestDetailsModal')).hide();">
+                                <i class="fas fa-times me-2"></i>Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('requestDetailsModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        console.log('Creating modal with HTML:', modalHtml);
+        
+        // Add modal to body and show
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+        modal.show();
+        
+        console.log('Modal created and shown');
+        
+        // If it's an own account, fetch the bank details
+        if (requestData.payment_method === 'online' && requestData.bank_account_type === 'own') {
+            console.log('Fetching bank details for sub user:', request.sub_user_id);
+            // Add a small delay to ensure modal is fully rendered
+            setTimeout(() => {
+                fetchSubUserBankDetails(request.sub_user_id);
+            }, 100);
+        }
+        
+    } catch (e) {
+        console.error('Error parsing request data:', e);
+        showAlert('Error loading request details', 'danger');
+    }
+}
+
+// Fetch sub user bank details
+function fetchSubUserBankDetails(subUserId) {
+    console.log('Fetching bank details for sub user:', subUserId);
+    
+    fetch(`/api/sub-user-bank-details/${subUserId}`)
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Bank details response:', data);
+        const ownAccountDetails = document.getElementById('ownAccountDetails');
+        if (ownAccountDetails) {
+            if (data.success && data.bank_account) {
+                const account = data.bank_account;
+                ownAccountDetails.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Bank Name:</strong><br>
+                            <span class="text-muted">${account.bank_name || 'N/A'}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Account Number:</strong><br>
+                            <span class="text-muted">${account.account_number || 'N/A'}</span>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <strong>IFSC Code:</strong><br>
+                            <span class="text-muted">${account.ifsc_code || 'N/A'}</span>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <strong>Account Holder:</strong><br>
+                            <span class="text-muted">${account.account_holder_name || 'N/A'}</span>
+                        </div>
+                        ${account.upi_id ? `
+                        <div class="col-md-6 mt-2">
+                            <strong>UPI ID:</strong><br>
+                            <span class="text-muted">${account.upi_id}</span>
+                        </div>
+                        ` : ''}
+                        ${account.phone_number ? `
+                        <div class="col-md-6 mt-2">
+                            <strong>Phone Number:</strong><br>
+                            <span class="text-muted">${account.phone_number}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="mt-3">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Important:</strong> Amount will be deducted from your main account balance and transferred to this sub user's account.
+                        </div>
+                    </div>
+                `;
+            } else {
+                ownAccountDetails.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Sub user's bank account details are not available. Please ask the sub user to add their bank details in Settings.
+                        <br><small class="text-muted">Response: ${data.message || 'No details found'}</small>
+                    </div>
+                `;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching sub user bank details:', error);
+        const ownAccountDetails = document.getElementById('ownAccountDetails');
+        if (ownAccountDetails) {
+            ownAccountDetails.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error loading bank details: ${error.message}
+                    <br><small class="text-muted">Please check the console for more details.</small>
+                </div>
+            `;
+        }
+    });
+}
+
+// Load sub user bank details for the modal
+function loadSubUserBankDetails(subUserId) {
+    console.log('Loading bank details for sub user:', subUserId);
+    
+    fetch(`/api/sub-user-bank-details/${subUserId}`)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Sub user bank details response:', data);
+        const subUserBankDetails = document.getElementById('subUserBankDetails');
+        if (subUserBankDetails) {
+            if (data.success && data.bank_account) {
+                const account = data.bank_account;
+                subUserBankDetails.innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-user-tie me-2 text-info"></i>
+                                <strong>${account.account_holder_name || 'N/A'}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Bank Name</small>
+                            <div class="fw-semibold">${account.bank_name || 'N/A'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Account Number</small>
+                            <div class="fw-semibold font-monospace">****${(account.account_number || '').slice(-4)}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">IFSC Code</small>
+                            <div class="fw-semibold font-monospace">${account.ifsc_code || 'N/A'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">UPI ID</small>
+                            <div class="fw-semibold">${account.upi_id || 'Not provided'}</div>
+                        </div>
+                        ${account.phone_number ? `
+                        <div class="col-12">
+                            <small class="text-muted">Contact</small>
+                            <div class="fw-semibold">
+                                <i class="fas fa-phone me-1"></i>${account.phone_number}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    ${account.notes ? `
+                    <div class="mt-3 pt-3 border-top">
+                        <small class="text-muted">Notes</small>
+                        <div class="text-muted small">${account.notes}</div>
+                    </div>
+                    ` : ''}
+                `;
+            } else {
+                subUserBankDetails.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-triangle text-warning mb-2" style="font-size: 2rem;"></i>
+                        <div class="text-muted">
+                            <strong>Bank details not available</strong><br>
+                            <small>Sub user hasn't added bank details yet</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error loading sub user bank details:', error);
+        const subUserBankDetails = document.getElementById('subUserBankDetails');
+        if (subUserBankDetails) {
+            subUserBankDetails.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="fas fa-exclamation-circle text-danger mb-2" style="font-size: 2rem;"></i>
+                    <div class="text-muted">
+                        <strong>Error loading bank details</strong><br>
+                        <small>${error.message}</small>
+                    </div>
+                </div>
+            `;
+        }
+    });
+}
+
+// Helper function to show invoice download request modal
+function showInvoiceDownloadModal(requestId, request, requestData) {
+    const modalHtml = `
+        <div class="modal fade" id="requestDetailsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>Invoice Approval Request
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <!-- Invoice Summary Card -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-light">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Invoice Details</h6>
+                                    </div>
+                                    <div class="col-auto">
+                                        <span class="badge ${requestData.invoice_type === 'in' ? 'bg-success' : 'bg-primary'} fs-6">
+                                            ${requestData.invoice_type === 'in' ? 'IN' : 'OUT'} Invoice
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Invoice Number</small>
+                                        <div class="fw-bold">${request.invoice_number || 'N/A'}</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Client</small>
+                                        <div>${requestData.client_name || 'N/A'}</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Amount</small>
+                                        <div class="fw-bold text-success">₹${parseFloat(requestData.amount || request.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Requested By</small>
+                                        <div class="fw-bold">${request.sub_user_name}</div>
+                                        <small class="text-muted">${request.sub_user_id}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Sub User Bank Details -->
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0"><i class="fas fa-user-circle me-2"></i>Sub User Bank Details</h6>
+                                    </div>
+                                    <div class="card-body" id="subUserBankDetails">
+                                        <div class="text-center py-3">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                            <div class="mt-2">Loading bank details...</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Main User Payment Selection -->
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Method Selection</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        ${requestData.invoice_type === 'out' ? `
+                                        <div class="alert alert-warning border-0 mb-3">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>OUT Invoice:</strong> Payment will be processed from your account.
+                                        </div>
+                                        
+                                        <!-- Payment Options -->
+                                        <div class="mb-3">
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="radio" name="paymentMethodDownload" id="paymentMethodBankDownload" value="bank" checked>
+                                                <label class="form-check-label fw-bold" for="paymentMethodBankDownload">
+                                                    <i class="fas fa-university me-2 text-primary"></i>Bank Account
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="paymentMethodDownload" id="paymentMethodCashDownload" value="cash">
+                                                <label class="form-check-label fw-bold" for="paymentMethodCashDownload">
+                                                    <i class="fas fa-money-bill-wave me-2 text-success"></i>Cash
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- Bank Selection -->
+                                        <div id="bankAccountSelectionDownload">
+                                            <div class="mb-3">
+                                                <label for="bankAccountSelectDownload" class="form-label fw-bold">Select Bank Account</label>
+                                                <select class="form-select" id="bankAccountSelectDownload" required>
+                                                    <option value="">Loading accounts...</option>
+                                                </select>
+                                            </div>
+                                            <div id="selectedAccountInfoDownload" class="alert alert-primary border-0" style="display: none;">
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <small class="text-muted">Account</small>
+                                                        <div class="fw-bold" id="accountNameDownload"></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <small class="text-muted">Available Balance</small>
+                                                        <div class="fw-bold text-success">₹<span id="availableBalanceDownload"></span></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Cash Balance -->
+                                        <div id="cashBalanceInfoDownload" class="alert alert-success border-0" style="display: none;">
+                                            <div class="row">
+                                                <div class="col">
+                                                    <small class="text-muted">Available Cash Balance</small>
+                                                    <div class="fw-bold">₹<span id="cashBalanceDownload">Loading...</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Amount Summary -->
+                                        <div class="border-top pt-3 mt-3">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="fw-bold">Invoice Amount:</span>
+                                                <span class="h5 text-success mb-0">₹<span id="invoiceAmountDownload">${parseFloat(requestData.amount || request.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span></span>
+                                            </div>
+                                            <div id="insufficientFundsWarningDownload" class="alert alert-danger border-0 mt-2" style="display: none;">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                <strong>Insufficient funds!</strong> Please select a different payment method.
+                                            </div>
+                                        </div>
+                                        ` : `
+                                        <div class="alert alert-success border-0 text-center">
+                                            <i class="fas fa-check-circle me-2"></i>
+                                            <strong>IN Invoice</strong><br>
+                                            No payment required. Download will be approved directly.
+                                        </div>
+                                        `}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </button>
+                        ${requestData.invoice_type === 'out' ? `
+                        <button type="button" class="btn btn-success btn-lg" id="confirmApprovalBtnDownload" onclick="approveOutInvoiceWithPayment(${requestId})">
+                            <i class="fas fa-check-circle me-2"></i>Approve & Process Payment
+                        </button>
+                        ` : `
+                        <button type="button" class="btn btn-success btn-lg" onclick="approveInvoiceDownloadRequest(${requestId}); bootstrap.Modal.getInstance(document.getElementById('requestDetailsModal')).hide();">
+                            <i class="fas fa-check-circle me-2"></i>Approve Download
+                        </button>
+                        `}
+                        <button type="button" class="btn btn-outline-danger" onclick="rejectInvoiceDownloadRequest(${requestId}); bootstrap.Modal.getInstance(document.getElementById('requestDetailsModal')).hide();">
+                            <i class="fas fa-ban me-2"></i>Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('requestDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    console.log('Creating invoice download modal');
+    
+    // Add modal to body and show
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+    modal.show();
+    
+    console.log('Invoice download modal created and shown');
+    
+    // Load sub-user bank details
+    loadSubUserBankDetails(request.sub_user_id);
+    
+    // If it's an OUT invoice, load bank accounts and setup payment functionality
+    if (requestData.invoice_type === 'out') {
+        setTimeout(() => {
+            loadBankAccountsForDownloadModal();
+            setupDownloadModalPaymentListeners();
+        }, 500); // Small delay to ensure modal is fully rendered
+    }
+}
+
+// Setup payment method listeners for the download modal
+function setupDownloadModalPaymentListeners() {
+    // Handle payment method changes
+    const bankRadio = document.getElementById('paymentMethodBankDownload');
+    const cashRadio = document.getElementById('paymentMethodCashDownload');
+    const bankSelection = document.getElementById('bankAccountSelectionDownload');
+    const cashInfo = document.getElementById('cashBalanceInfoDownload');
+    
+    if (bankRadio && cashRadio) {
+        bankRadio.addEventListener('change', function() {
+            if (this.checked) {
+                bankSelection.style.display = 'block';
+                cashInfo.style.display = 'none';
+            }
+        });
+        
+        cashRadio.addEventListener('change', function() {
+            if (this.checked) {
+                bankSelection.style.display = 'none';
+                cashInfo.style.display = 'block';
+            }
+        });
+        
+        // Trigger initial state
+        if (bankRadio.checked) {
+            bankSelection.style.display = 'block';
+            cashInfo.style.display = 'none';
+        } else if (cashRadio.checked) {
+            bankSelection.style.display = 'none';
+            cashInfo.style.display = 'block';
+        }
+    }
+}
+
+// Function to load bank details for invoice
+function loadInvoiceBankDetails(invoiceId) {
+    console.log('Loading bank details for invoice ID:', invoiceId);
+    
+    fetch(`/api/invoices/${invoiceId}/details`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Invoice details loaded:', data);
+            
+            const bankDetailsDiv = document.getElementById('invoiceBankDetails');
+            if (bankDetailsDiv && data.success) {
+                const invoice = data.invoice;
+                const bankDetails = data.bank_details;
+                
+                let bankDetailsHtml = '';
+                
+                // Show main user's bank accounts
+                if (bankDetails && bankDetails.length > 0) {
+                    bankDetailsHtml = `
+                        <h6><i class="fas fa-university me-2"></i>Main User Bank Accounts</h6>
+                        <div class="row">
+                            ${bankDetails.map(bank => `
+                                <div class="col-md-6 mb-2">
+                                    <div class="card border-primary">
+                                        <div class="card-body p-2">
+                                            <h6 class="card-title mb-1">${bank.bank_name || 'N/A'} ${bank.is_default ? '<span class="badge bg-success">Default</span>' : ''}</h6>
+                                            <p class="card-text small mb-1">
+                                                <strong>Account:</strong> ${bank.account_number || 'N/A'}<br>
+                                                <strong>IFSC:</strong> ${bank.ifsc_code || 'N/A'}<br>
+                                                <strong>Branch:</strong> ${bank.branch_name || 'N/A'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                // Show vendor bank details if they exist
+                const vendorBankDetails = data.vendor_bank_details;
+                if (vendorBankDetails) {
+                    bankDetailsHtml += `
+                        <h6 class="mt-3"><i class="fas fa-building me-2"></i>Vendor Bank Account (Used for this Invoice)</h6>
+                        <div class="card border-info">
+                            <div class="card-body p-2">
+                                <h6 class="card-title mb-1">${vendorBankDetails.bank_name || 'N/A'}</h6>
+                                <p class="card-text small mb-1">
+                                    <strong>Account:</strong> ${vendorBankDetails.account_number || 'N/A'}<br>
+                                    <strong>IFSC:</strong> ${vendorBankDetails.ifsc_code || 'N/A'}<br>
+                                    <strong>Holder:</strong> ${vendorBankDetails.account_holder_name || 'N/A'}<br>
+                                    ${vendorBankDetails.upi_id ? `<strong>UPI ID:</strong> ${vendorBankDetails.upi_id}<br>` : ''}
+                                    ${vendorBankDetails.phone_number ? `<strong>Phone:</strong> ${vendorBankDetails.phone_number}` : ''}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // If no bank details found at all
+                if (!bankDetailsHtml) {
+                    bankDetailsHtml = `
+                        <div class="alert alert-secondary">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No bank details found for this invoice.
+                        </div>
+                    `;
+                }
+                
+                // Also show payment method and additional invoice details
+                bankDetailsHtml += `
+                    <hr>
+                    <h6><i class="fas fa-info-circle me-2"></i>Invoice Details</h6>
+                    <div class="row small">
+                        <div class="col-md-6">
+                            <strong>Payment Method:</strong> ${invoice.payment_method || 'N/A'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Bank Account Type:</strong> ${invoice.bank_account_type || 'N/A'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Invoice Date:</strong> ${invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : 'N/A'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Due Date:</strong> ${invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}
+                        </div>
+                    </div>
+                `;
+                
+                bankDetailsDiv.innerHTML = bankDetailsHtml;
+            } else {
+                bankDetailsDiv.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Unable to load bank details for this invoice.
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading invoice bank details:', error);
+            const bankDetailsDiv = document.getElementById('invoiceBankDetails');
+            if (bankDetailsDiv) {
+                bankDetailsDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Error loading bank details: ${error.message}
+                    </div>
+                `;
+            }
+        });
+}
+
+// OUT Invoice Approval Functions
+let currentOutInvoiceId = null;
+let userBankAccounts = [];
+let userCashBalance = 0;
+
+async function showOutInvoiceApprovalModal(invoiceId) {
+    currentOutInvoiceId = invoiceId;
+    
+    try {
+        // Load bank accounts and cash balance
+        const bankAccountsResponse = await fetch('/api/user/bank-accounts');
+        if (bankAccountsResponse.ok) {
+            const bankData = await bankAccountsResponse.json();
+            if (bankData.success) {
+                userBankAccounts = bankData.bank_accounts;
+                userCashBalance = bankData.cash_balance;
+            }
+        }
+        
+        // Find the invoice in pending requests
+        const invoice = pendingRequests.find(r => r.id === invoiceId && r.request_category === 'out_invoice_approval');
+        if (!invoice) {
+            showAlert('Invoice not found', 'danger');
+            return;
+        }
+        
+        // Populate invoice details
+        const invoiceDetailsDiv = document.getElementById('outInvoiceDetails');
+        invoiceDetailsDiv.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-file me-2"></i>Invoice Number</h6>
+                    <p><strong>${invoice.invoice_number}</strong></p>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-user me-2"></i>Client</h6>
+                    <p><strong>${invoice.client_name}</strong></p>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-user-tie me-2"></i>Sub User</h6>
+                    <p><strong>${invoice.sub_user_name}</strong></p>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-calendar me-2"></i>Invoice Date</h6>
+                    <p>${new Date(invoice.invoice_date).toLocaleDateString()}</p>
+                </div>
+                <div class="col-12">
+                    <h6><i class="fas fa-rupee-sign me-2"></i>Total Amount</h6>
+                    <p class="h4 text-success">₹${parseFloat(invoice.total_amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                </div>
+            </div>
+        `;
+        
+        // Set invoice amount in payment section
+        document.getElementById('invoiceAmount').textContent = parseFloat(invoice.total_amount).toLocaleString('en-IN', {minimumFractionDigits: 2});
+        
+        // Populate bank accounts dropdown
+        const bankSelect = document.getElementById('bankAccountSelect');
+        bankSelect.innerHTML = '<option value="">Select an account...</option>';
+        
+        userBankAccounts.forEach(account => {
+            const option = document.createElement('option');
+            option.value = account.id;
+            option.textContent = `${account.account_name} - ${account.bank_name} (₹${parseFloat(account.current_balance).toLocaleString('en-IN', {minimumFractionDigits: 2})})`;
+            option.setAttribute('data-balance', account.current_balance);
+            option.setAttribute('data-account-name', account.account_name);
+            option.setAttribute('data-bank-name', account.bank_name);
+            if (account.is_default) {
+                option.selected = true;
+            }
+            bankSelect.appendChild(option);
+        });
+        
+        // Update cash balance
+        document.getElementById('cashBalance').textContent = parseFloat(userCashBalance).toLocaleString('en-IN', {minimumFractionDigits: 2});
+        
+        // Set up event listeners
+        setupPaymentMethodListeners();
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('outInvoiceApprovalModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error showing OUT invoice approval modal:', error);
+        showAlert('Error loading approval form: ' + error.message, 'danger');
+    }
+}
+
+function setupPaymentMethodListeners() {
+    const paymentMethodRadios = document.querySelectorAll('input[name="paymentMethod"]');
+    const bankSelect = document.getElementById('bankAccountSelect');
+    const selectedAccountInfo = document.getElementById('selectedAccountInfo');
+    
+    // Handle payment method change
+    paymentMethodRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const bankSelection = document.getElementById('bankAccountSelection');
+            if (this.value === 'bank') {
+                bankSelection.style.display = 'block';
+                updateBankAccountInfo();
+            } else {
+                bankSelection.style.display = 'none';
+                selectedAccountInfo.style.display = 'none';
+            }
+            checkSufficientFunds();
+        });
+    });
+    
+    // Handle bank account selection change
+    bankSelect.addEventListener('change', function() {
+        updateBankAccountInfo();
+        checkSufficientFunds();
+    });
+    
+    // Initial setup
+    updateBankAccountInfo();
+    checkSufficientFunds();
+}
+
+function updateBankAccountInfo() {
+    const bankSelect = document.getElementById('bankAccountSelect');
+    const selectedAccountInfo = document.getElementById('selectedAccountInfo');
+    
+    if (bankSelect.value) {
+        const selectedOption = bankSelect.selectedOptions[0];
+        const balance = selectedOption.getAttribute('data-balance');
+        const accountName = selectedOption.getAttribute('data-account-name');
+        const bankName = selectedOption.getAttribute('data-bank-name');
+        
+        document.getElementById('accountName').textContent = accountName;
+        document.getElementById('bankName').textContent = bankName;
+        document.getElementById('availableBalance').textContent = parseFloat(balance).toLocaleString('en-IN', {minimumFractionDigits: 2});
+        
+        selectedAccountInfo.style.display = 'block';
+    } else {
+        selectedAccountInfo.style.display = 'none';
+    }
+}
+
+function checkSufficientFunds() {
+    const invoiceAmount = parseFloat(document.getElementById('invoiceAmount').textContent.replace(/,/g, ''));
+    const selectedPaymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+    const warningDiv = document.getElementById('insufficientFundsWarning');
+    const confirmBtn = document.getElementById('confirmApprovalBtn');
+    
+    let availableAmount = 0;
+    
+    if (selectedPaymentMethod === 'bank') {
+        const bankSelect = document.getElementById('bankAccountSelect');
+        if (bankSelect.value) {
+            const selectedOption = bankSelect.selectedOptions[0];
+            availableAmount = parseFloat(selectedOption.getAttribute('data-balance'));
+        }
+    } else {
+        availableAmount = userCashBalance;
+    }
+    
+    if (availableAmount < invoiceAmount) {
+        warningDiv.style.display = 'block';
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Insufficient Funds';
+    } else {
+        warningDiv.style.display = 'none';
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i>Approve & Pay';
+    }
+}
+
+async function confirmOutInvoiceApproval() {
+    if (!currentOutInvoiceId) {
+        showAlert('No invoice selected', 'danger');
+        return;
+    }
+    
+    const selectedPaymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+    let bankAccountId = null;
+    
+    if (selectedPaymentMethod === 'bank') {
+        bankAccountId = document.getElementById('bankAccountSelect').value;
+        if (!bankAccountId) {
+            showAlert('Please select a bank account', 'warning');
+            return;
+        }
+    }
+    
+    const confirmBtn = document.getElementById('confirmApprovalBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+    
+    try {
+        const response = await fetch(`/api/sub-user/invoices/${currentOutInvoiceId}/approve`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                payment_method: selectedPaymentMethod,
+                bank_account_id: bankAccountId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('outInvoiceApprovalModal'));
+            modal.hide();
+            
+            // Reload pending requests
+            await loadPendingRequests();
+        } else {
+            showAlert(data.message, 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error approving OUT invoice:', error);
+        showAlert('Error approving invoice: ' + error.message, 'danger');
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i>Approve & Pay';
+    }
+}
+
+async function rejectOutInvoiceRequest(invoiceId) {
+    // For now, we'll show a simple rejection confirmation
+    // You can expand this to include rejection reasons if needed
+    if (!confirm('Are you sure you want to reject this OUT invoice?')) {
+        return;
+    }
+    
+    try {
+        // Since we don't have a reject endpoint yet, we'll update the invoice status directly
+        // In a full implementation, you might want to add a dedicated reject endpoint
+        showAlert('Rejection functionality to be implemented', 'info');
+    } catch (error) {
+        console.error('Error rejecting OUT invoice:', error);
+        showAlert('Error rejecting invoice: ' + error.message, 'danger');
+    }
+}
+
+// Load bank accounts for download modal
+async function loadBankAccountsForDownloadModal() {
+    console.log('[OUT-APPROVAL] Starting to load bank accounts...');
+    const bankSelect = document.getElementById('bankAccountSelectDownload');
+    const cashBalanceSpan = document.getElementById('cashBalanceDownload');
+    
+    // Show loading state
+    if (bankSelect) bankSelect.innerHTML = '<option value="">Loading accounts...</option>';
+    
+    try {
+        console.log('[OUT-APPROVAL] Fetching from /api/user/bank-accounts...');
+        // First try the dedicated endpoint; if it fails, fall back to invoice details
+        const response = await fetch('/api/user/bank-accounts', {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        console.log('[OUT-APPROVAL] /api/user/bank-accounts status:', response.status);
+        
+        let data = null;
+        if (!response.ok) {
+            console.warn(`[OUT-APPROVAL] /api/user/bank-accounts failed with status: ${response.status}`);
+            const errorText = await response.text();
+            console.warn(`[OUT-APPROVAL] Error response body:`, errorText);
+            
+            // Show debugging info to user temporarily
+            if (bankSelect) {
+                bankSelect.innerHTML = `<option value="">Debug: ${response.status} - ${errorText.substring(0, 50)}...</option>`;
+            }
+            
+            console.warn('[OUT-APPROVAL] Trying invoice details fallback');
+            // Use the invoice id embedded in the currently opened request (read from modal header context if available)
+            const currentRequest = pendingRequests.find(r => r.request_category === 'invoice_download');
+            const invoiceId = currentRequest ? (currentRequest.invoice_id || currentRequest.invoice_db_id) : null;
+            if (invoiceId) {
+                const invResp = await fetch(`/api/invoices/${invoiceId}/details`, {credentials:'include', cache:'no-store'});
+                if (invResp.ok) {
+                    const invData = await invResp.json();
+                        data = {
+                            success: invData && invData.success !== false,
+                            bank_accounts: (invData && invData.bank_details) ? invData.bank_details.map((b, idx) => ({
+                                id: idx + 1,
+                                account_number: b.account_number || `****${idx + 1}`,
+                                bank_name: b.bank_name,
+                                current_balance: 0,
+                                ifsc_code: b.ifsc_code
+                            })) : [],
+                            cash_balance: invData && typeof invData.cash_balance !== 'undefined' ? invData.cash_balance : 0
+                        };
+                }
+            }
+        } else {
+            data = await response.json();
+        }
+        console.log('[OUT-APPROVAL] Bank accounts payload:', data);
+        
+        if (!data || !data.success) {
+            console.error('[OUT-APPROVAL] No valid data received:', data);
+            if (bankSelect) bankSelect.innerHTML = '<option value="">No data received from server</option>';
+            if (cashBalanceSpan) cashBalanceSpan.textContent = '0.00';
+            checkDownloadModalSufficientFunds();
+            return;
+        }
+
+        if (cashBalanceSpan) {
+            cashBalanceSpan.textContent = parseFloat(data.cash_balance || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
+        }
+
+        if (bankSelect) {
+            const accounts = Array.isArray(data.bank_accounts) ? data.bank_accounts : [];
+            if (accounts.length === 0) {
+                bankSelect.innerHTML = '<option value="">No active bank accounts found</option>';
+                // Switch to cash automatically when no banks exist
+                const cashRadio = document.getElementById('paymentMethodCashDownload');
+                if (cashRadio) {
+                    cashRadio.checked = true;
+                    const evt = new Event('change');
+                    cashRadio.dispatchEvent(evt);
+                }
+            } else {
+                bankSelect.innerHTML = '<option value="">Select an account...</option>';
+                accounts.forEach((account, index) => {
+                    const option = document.createElement('option');
+                    option.value = account.id;
+                    const accountDisplay = account.account_number ? `${account.account_number.slice(-4)}` : `Account ${index + 1}`;
+                    option.textContent = `${accountDisplay} - ${account.bank_name} (₹${parseFloat(account.current_balance).toLocaleString('en-IN', {minimumFractionDigits: 2})})`;
+                    option.setAttribute('data-balance', account.current_balance);
+                    option.setAttribute('data-account-name', accountDisplay);
+                    option.setAttribute('data-bank-name', account.bank_name);
+                    if (index === 0 && !bankSelect.value) {  // Select first account by default
+                        option.selected = true;
+                    }
+                    bankSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Trigger initial update
+        updateDownloadModalBankInfo();
+        checkDownloadModalSufficientFunds();
+    } catch (error) {
+        console.error('[OUT-APPROVAL] Error loading bank accounts:', error);
+        if (bankSelect) bankSelect.innerHTML = `<option value="">Error: ${error.message}</option>`;
+        if (cashBalanceSpan) cashBalanceSpan.textContent = '0.00';
+    }
+}
+
+// Setup payment method listeners for download modal
+function setupDownloadModalPaymentListeners() {
+    const paymentMethodRadios = document.querySelectorAll('input[name="paymentMethodDownload"]');
+    const bankSelect = document.getElementById('bankAccountSelectDownload');
+    
+    // Handle payment method change
+    paymentMethodRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const bankSelection = document.getElementById('bankAccountSelectionDownload');
+            const selectedAccountInfo = document.getElementById('selectedAccountInfoDownload');
+            
+            if (this.value === 'bank') {
+                bankSelection.style.display = 'block';
+                updateDownloadModalBankInfo();
+            } else {
+                bankSelection.style.display = 'none';
+                selectedAccountInfo.style.display = 'none';
+            }
+            checkDownloadModalSufficientFunds();
+        });
+    });
+    
+    // Handle bank account selection change
+    if (bankSelect) {
+        bankSelect.addEventListener('change', function() {
+            updateDownloadModalBankInfo();
+            checkDownloadModalSufficientFunds();
+        });
+    }
+    
+    // Initial setup
+    updateDownloadModalBankInfo();
+    checkDownloadModalSufficientFunds();
+}
+
+// Update bank account info for download modal
+function updateDownloadModalBankInfo() {
+    const bankSelect = document.getElementById('bankAccountSelectDownload');
+    const selectedAccountInfo = document.getElementById('selectedAccountInfoDownload');
+    
+    if (bankSelect && bankSelect.value) {
+        const selectedOption = bankSelect.selectedOptions[0];
+        const balance = selectedOption.getAttribute('data-balance');
+        const accountName = selectedOption.getAttribute('data-account-name');
+        const bankName = selectedOption.getAttribute('data-bank-name');
+        
+        const accountNameSpan = document.getElementById('accountNameDownload');
+        const bankNameSpan = document.getElementById('bankNameDownload');
+        const availableBalanceSpan = document.getElementById('availableBalanceDownload');
+        
+        if (accountNameSpan) accountNameSpan.textContent = accountName;
+        if (bankNameSpan) bankNameSpan.textContent = bankName;
+        if (availableBalanceSpan) availableBalanceSpan.textContent = parseFloat(balance).toLocaleString('en-IN', {minimumFractionDigits: 2});
+        
+        if (selectedAccountInfo) selectedAccountInfo.style.display = 'block';
+    } else if (selectedAccountInfo) {
+        selectedAccountInfo.style.display = 'none';
+    }
+}
+
+// Check sufficient funds for download modal
+function checkDownloadModalSufficientFunds() {
+    const invoiceAmountSpan = document.getElementById('invoiceAmountDownload');
+    const selectedPaymentMethod = document.querySelector('input[name="paymentMethodDownload"]:checked');
+    const warningDiv = document.getElementById('insufficientFundsWarningDownload');
+    const confirmBtn = document.getElementById('confirmApprovalBtnDownload');
+    
+    if (!invoiceAmountSpan || !selectedPaymentMethod) return;
+    
+    const invoiceAmount = parseFloat(invoiceAmountSpan.textContent.replace(/,/g, ''));
+    let availableAmount = 0;
+    
+    if (selectedPaymentMethod.value === 'bank') {
+        const bankSelect = document.getElementById('bankAccountSelectDownload');
+        if (bankSelect && bankSelect.value) {
+            const selectedOption = bankSelect.selectedOptions[0];
+            availableAmount = parseFloat(selectedOption.getAttribute('data-balance'));
+        }
+    } else {
+        const cashBalanceSpan = document.getElementById('cashBalanceDownload');
+        if (cashBalanceSpan) {
+            availableAmount = parseFloat(cashBalanceSpan.textContent.replace(/,/g, ''));
+        }
+    }
+    
+    if (warningDiv && confirmBtn) {
+        if (availableAmount < invoiceAmount) {
+            warningDiv.style.display = 'block';
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Insufficient Funds';
+        } else {
+            warningDiv.style.display = 'none';
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Approve & Process Payment';
+        }
+    }
+}
+
+// Approve OUT invoice with payment processing
+async function approveOutInvoiceWithPayment(requestId) {
+    try {
+        const selectedPaymentMethod = document.querySelector('input[name="paymentMethodDownload"]:checked');
+        if (!selectedPaymentMethod) {
+            showAlert('Please select a payment method', 'warning');
+            return;
+        }
+        
+        let bankAccountId = null;
+        if (selectedPaymentMethod.value === 'bank') {
+            const bankSelect = document.getElementById('bankAccountSelectDownload');
+            bankAccountId = bankSelect ? bankSelect.value : null;
+            if (!bankAccountId) {
+                showAlert('Please select a bank account', 'warning');
+                return;
+            }
+        }
+        
+        const confirmBtn = document.getElementById('confirmApprovalBtnDownload');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        }
+        
+        // Find the invoice in pending requests to get the invoice ID
+        const request = pendingRequests.find(r => r.id === requestId && r.request_category === 'invoice_download');
+        const invoiceId = request ? (request.invoice_id || request.invoice_db_id) : null;
+        if (!request || !invoiceId) {
+            showAlert('Invoice not found in pending requests', 'danger');
+            console.error('Request data:', request);
+            return;
+        }
+        
+        console.log('Processing payment for invoice ID:', invoiceId);
+        console.log('Full request object:', request);
+        console.log('Payment method:', selectedPaymentMethod.value);
+        console.log('Bank account ID:', bankAccountId);
+        
+        // Call the OUT invoice approval endpoint
+        const response = await fetch(`/api/sub-user/invoices/${invoiceId}/approve`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                payment_method: selectedPaymentMethod.value,
+                bank_account_id: bankAccountId
+            })
+        });
+        
+        const data = await response.json();
+        console.log('Server response:', response.status, data);
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('requestDetailsModal'));
+            if (modal) modal.hide();
+            
+            // Reload pending requests
+            await loadPendingRequests();
+        } else {
+            showAlert(data.message, 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error approving OUT invoice with payment:', error);
+        showAlert('Error processing payment: ' + error.message, 'danger');
+    } finally {
+        const confirmBtn = document.getElementById('confirmApprovalBtnDownload');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Approve & Process Payment';
+        }
+    }
+}
+
+// Expense Approval Functions
+let currentExpenseRequestId = null;
+let expenseUserBankAccounts = [];
+let expenseUserCashBalance = 0;
+
+async function showExpenseApprovalModal(requestId) {
+    currentExpenseRequestId = requestId;
+    
+    try {
+        // Load bank accounts and cash balance
+        const bankAccountsResponse = await fetch('/api/user/bank-accounts');
+        if (bankAccountsResponse.ok) {
+            const bankData = await bankAccountsResponse.json();
+            if (bankData.success) {
+                expenseUserBankAccounts = bankData.bank_accounts;
+                expenseUserCashBalance = bankData.cash_balance;
+            }
+        }
+        
+        // Find the expense request in pending requests
+        const expenseRequest = pendingRequests.find(r => r.id === requestId && r.request_type === 'expense');
+        if (!expenseRequest) {
+            showAlert('Expense request not found', 'danger');
+            return;
+        }
+        
+        const requestData = JSON.parse(expenseRequest.request_data);
+        
+        // Populate expense details
+        const expenseDetailsDiv = document.getElementById('expenseApprovalDetails');
+        expenseDetailsDiv.innerHTML = `
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-receipt me-2"></i>Expense Details</h6>
+                    <div class="expense-info">
+                        <div class="mb-2">
+                            <strong>Title:</strong> ${requestData.title}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Amount:</strong> <span class="text-success">₹${parseFloat(requestData.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Category:</strong> ${requestData.category || 'General'}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Date:</strong> ${formatDate(requestData.expense_date)}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Payment Method:</strong> ${requestData.payment_method}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Description:</strong> ${requestData.description || 'No description provided'}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-user me-2"></i>Sub User Details</h6>
+                    <div class="sub-user-info">
+                        <div class="mb-2">
+                            <strong>Name:</strong> ${expenseRequest.sub_user_name || 'N/A'}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Request Date:</strong> ${formatDate(expenseRequest.created_at)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Populate bank accounts dropdown
+        populateExpenseBankAccounts();
+        
+        // Update amount display
+        const amountSpan = document.getElementById('expenseApprovalAmount');
+        if (amountSpan) {
+            amountSpan.textContent = `₹${parseFloat(requestData.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        }
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('expenseApprovalModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error loading expense approval modal:', error);
+        showAlert('Error loading expense details', 'danger');
+    }
+}
+
+function populateExpenseBankAccounts() {
+    const bankSelect = document.getElementById('expenseApprovalBankAccount');
+    const cashBalanceSpan = document.getElementById('expenseCashBalance');
+    
+    if (!bankSelect || !cashBalanceSpan) return;
+    
+    // Clear existing options
+    bankSelect.innerHTML = '<option value="">Select an account...</option>';
+    
+    // Update cash balance display
+    cashBalanceSpan.textContent = expenseUserCashBalance.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    
+    // Add bank accounts to dropdown
+    expenseUserBankAccounts.forEach(account => {
+        const option = document.createElement('option');
+        option.value = account.id;
+        option.textContent = `${account.bank_name} - ₹${parseFloat(account.current_balance).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        option.dataset.balance = account.current_balance;
+        option.dataset.bankName = account.bank_name;
+        bankSelect.appendChild(option);
+    });
+    
+    // Setup payment method radio button listeners
+    setupExpensePaymentMethodListeners();
+    
+    // Initial validation
+    validateExpensePaymentSelection();
+}
+
+function setupExpensePaymentMethodListeners() {
+    const bankRadio = document.getElementById('expensePaymentMethodBank');
+    const cashRadio = document.getElementById('expensePaymentMethodCash');
+    const bankSelection = document.getElementById('expenseBankAccountSelection');
+    const bankSelect = document.getElementById('expenseApprovalBankAccount');
+    
+    if (bankRadio && cashRadio && bankSelection && bankSelect) {
+        // Bank radio button listener
+        bankRadio.addEventListener('change', function() {
+            if (this.checked) {
+                bankSelection.style.display = 'block';
+                validateExpensePaymentSelection();
+            }
+        });
+        
+        // Cash radio button listener
+        cashRadio.addEventListener('change', function() {
+            if (this.checked) {
+                bankSelection.style.display = 'none';
+                validateExpensePaymentSelection();
+            }
+        });
+        
+        // Bank account selection listener
+        bankSelect.addEventListener('change', function() {
+            updateExpenseAccountInfo();
+            validateExpensePaymentSelection();
+        });
+    }
+}
+
+function updateExpenseAccountInfo() {
+    const bankSelect = document.getElementById('expenseApprovalBankAccount');
+    const accountInfo = document.getElementById('expenseSelectedAccountInfo');
+    const accountNameSpan = document.getElementById('expenseAccountName');
+    const bankNameSpan = document.getElementById('expenseBankName');
+    const balanceSpan = document.getElementById('expenseAvailableBalance');
+    
+    if (!bankSelect || !accountInfo) return;
+    
+    const selectedOption = bankSelect.options[bankSelect.selectedIndex];
+    
+    if (selectedOption && selectedOption.value) {
+        const balance = parseFloat(selectedOption.dataset.balance || 0);
+        const bankName = selectedOption.dataset.bankName || '';
+        
+        accountNameSpan.textContent = selectedOption.textContent.split(' - ')[0];
+        bankNameSpan.textContent = bankName;
+        balanceSpan.textContent = balance.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        
+        accountInfo.style.display = 'block';
+    } else {
+        accountInfo.style.display = 'none';
+    }
+}
+
+function validateExpensePaymentSelection() {
+    const bankRadio = document.getElementById('expensePaymentMethodBank');
+    const cashRadio = document.getElementById('expensePaymentMethodCash');
+    const bankSelect = document.getElementById('expenseApprovalBankAccount');
+    const warningDiv = document.getElementById('expenseInsufficientFundsWarning');
+    
+    if (!bankRadio || !cashRadio || !warningDiv) return;
+    
+    const expenseRequest = pendingRequests.find(r => r.id === currentExpenseRequestId);
+    if (!expenseRequest) return;
+    
+    const requestData = JSON.parse(expenseRequest.request_data);
+    const requiredAmount = parseFloat(requestData.amount);
+    
+    let availableBalance = 0;
+    let hasInsufficientFunds = false;
+    
+    if (bankRadio.checked) {
+        // Bank account selected
+        const selectedOption = bankSelect.options[bankSelect.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            availableBalance = parseFloat(selectedOption.dataset.balance || 0);
+        }
+    } else if (cashRadio.checked) {
+        // Cash selected
+        availableBalance = expenseUserCashBalance;
+    }
+    
+    hasInsufficientFunds = availableBalance < requiredAmount;
+    
+    if (hasInsufficientFunds) {
+        warningDiv.style.display = 'block';
+        warningDiv.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Insufficient funds in selected payment method! Available: ₹${availableBalance.toLocaleString('en-IN', {minimumFractionDigits: 2})}, Required: ₹${requiredAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+        `;
+    } else {
+        warningDiv.style.display = 'none';
+    }
+    
+    // Enable/disable the approve button
+    const approveBtn = document.getElementById('confirmExpenseApprovalBtn');
+    if (approveBtn) {
+        approveBtn.disabled = hasInsufficientFunds;
+    }
+}
+
+async function confirmExpenseApproval() {
+    const bankRadio = document.getElementById('expensePaymentMethodBank');
+    const cashRadio = document.getElementById('expensePaymentMethodCash');
+    const bankSelect = document.getElementById('expenseApprovalBankAccount');
+    
+    if (!bankRadio || !cashRadio) {
+        showAlert('Payment method selection error', 'danger');
+        return;
+    }
+    
+    let bankAccountId = null;
+    let paymentMethod = 'cash';
+    let availableBalance = 0;
+    
+    if (bankRadio.checked) {
+        // Bank payment selected
+        const selectedOption = bankSelect.options[bankSelect.selectedIndex];
+        if (!selectedOption || !selectedOption.value) {
+            showAlert('Please select a bank account', 'danger');
+            return;
+        }
+        bankAccountId = selectedOption.value;
+        paymentMethod = 'bank';
+        availableBalance = parseFloat(selectedOption.dataset.balance || 0);
+    } else if (cashRadio.checked) {
+        // Cash payment selected
+        paymentMethod = 'cash';
+        availableBalance = expenseUserCashBalance;
+    }
+    
+    const expenseRequest = pendingRequests.find(r => r.id === currentExpenseRequestId);
+    const requestData = JSON.parse(expenseRequest.request_data);
+    const requiredAmount = parseFloat(requestData.amount);
+    
+    if (availableBalance < requiredAmount) {
+        showAlert(`Insufficient balance in selected payment method. Available: ₹${availableBalance.toLocaleString('en-IN', {minimumFractionDigits: 2})}, Required: ₹${requiredAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}`, 'danger');
+        return;
+    }
+    
+    try {
+        // Close modal first
+        const modal = bootstrap.Modal.getInstance(document.getElementById('expenseApprovalModal'));
+        modal.hide();
+        
+        // Show loading state
+        showAlert('Processing expense approval and payment...', 'info');
+        
+        const response = await fetch(`/api/sub-user/expense-requests/${currentExpenseRequestId}/approve-with-payment`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                bank_account_id: bankAccountId,
+                payment_method: paymentMethod
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            await loadPendingRequests();
+            loadSubUserStats();
+        } else {
+            showAlert(data.message || 'Error processing expense approval', 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error approving expense:', error);
+        showAlert('Error processing expense approval: ' + error.message, 'danger');
+    }
+}
+
+// Reject OUT invoice function
+async function rejectOutInvoice(requestId) {
+    console.log('Rejecting OUT invoice request:', requestId);
+    
+    // Find the request data
+    const request = pendingRequests.find(r => r.id === requestId && r.request_category === 'out_invoice_approval');
+    if (!request) {
+        showAlert('OUT invoice request not found', 'danger');
+        return;
+    }
+    
+    const invoiceId = request.id; // This should be the actual invoice ID
+    
+    showConfirmationModal({
+        type: 'reject',
+        title: 'Reject OUT Invoice',
+        message: `Are you sure you want to reject OUT invoice ${request.invoice_number}? This action cannot be undone.`,
+        onConfirm: async function() {
+            try {
+                const response = await fetch(`/api/sub-user/invoices/${invoiceId}/reject`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    await loadPendingRequests();
+                } else {
+                    showAlert(data.message, 'danger');
+                }
+                
+            } catch (error) {
+                console.error('Error rejecting OUT invoice:', error);
+                showAlert('Error rejecting invoice: ' + error.message, 'danger');
+            }
+        }
+    });
+}
+
+</script>
+
+        </div> <!-- Close main-content -->
+    </div> <!-- Close sub-users-container -->
+</div> <!-- Close professional-dashboard -->
+
+<!-- Professional Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center" id="confirmationModalLabel">
+                    <div class="confirmation-icon me-3">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <span id="confirmationTitle">Confirm Action</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <p class="mb-3" id="confirmationMessage">Are you sure you want to proceed with this action?</p>
+                <div class="confirmation-details" id="confirmationDetails" style="display: none;">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Request Details</h6>
+                        <div id="confirmationRequestInfo"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmationConfirmBtn">
+                    <i class="fas fa-check me-2"></i>Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OUT Invoice Approval Modal -->
+<div class="modal fade" id="outInvoiceApprovalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-credit-card me-2"></i>Approve OUT Invoice Payment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    You are about to approve payment for this OUT invoice. The invoice amount will be deducted from your selected payment method.
+                </div>
+                
+                <!-- Invoice Details -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Invoice Details</h6>
+                    </div>
+                    <div class="card-body" id="outInvoiceDetails">
+                        <!-- Invoice details will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Payment Method Selection -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i>Select Payment Method</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="paymentMethodBank" value="bank" checked>
+                                    <label class="form-check-label" for="paymentMethodBank">
+                                        <i class="fas fa-university me-2"></i>Bank Account
+                                    </label>
+                                </div>
+                                
+                                <div id="bankAccountSelection">
+                                    <div class="mb-3">
+                                        <label for="bankAccountSelect" class="form-label">Select Bank Account</label>
+                                        <select class="form-select" id="bankAccountSelect" required>
+                                            <option value="">Select an account...</option>
+                                        </select>
+                                        <div class="form-text">Available balance will be shown for the selected account</div>
+                                    </div>
+                                    <div id="selectedAccountInfo" class="alert alert-light" style="display: none;">
+                                        <strong>Account:</strong> <span id="accountName"></span><br>
+                                        <strong>Bank:</strong> <span id="bankName"></span><br>
+                                        <strong>Available Balance:</strong> ₹<span id="availableBalance"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="paymentMethodCash" value="cash">
+                                    <label class="form-check-label" for="paymentMethodCash">
+                                        <i class="fas fa-money-bill-wave me-2"></i>Cash
+                                    </label>
+                                </div>
+                                
+                                <div id="cashBalanceInfo" class="alert alert-light">
+                                    <strong>Available Cash Balance:</strong> ₹<span id="cashBalance">0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>Invoice Amount:</strong>
+                                <span class="h5 text-success">₹<span id="invoiceAmount">0.00</span></span>
+                            </div>
+                            <div id="insufficientFundsWarning" class="alert alert-warning mt-2" style="display: none;">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Insufficient funds in selected payment method!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmApprovalBtn" onclick="confirmOutInvoiceApproval()">
+                    <i class="fas fa-check me-1"></i>Approve & Pay
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Expense Approval Modal -->
+<div class="modal fade" id="expenseApprovalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-receipt me-2"></i>Approve Expense Payment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    You are about to approve payment for this expense request. The expense amount will be deducted from your selected payment method.
+                </div>
+                
+                <!-- Expense Details -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-receipt me-2"></i>Expense Details</h6>
+                    </div>
+                    <div class="card-body" id="expenseApprovalDetails">
+                        <!-- Expense details will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Payment Method Selection -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i>Select Payment Method</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="expensePaymentMethod" id="expensePaymentMethodBank" value="bank" checked>
+                                    <label class="form-check-label" for="expensePaymentMethodBank">
+                                        <i class="fas fa-university me-2"></i>Bank Account
+                                    </label>
+                                </div>
+                                
+                                <div id="expenseBankAccountSelection">
+                                    <div class="mb-3">
+                                        <label for="expenseApprovalBankAccount" class="form-label">Select Bank Account</label>
+                                        <select class="form-select" id="expenseApprovalBankAccount" required>
+                                            <option value="">Select an account...</option>
+                                        </select>
+                                        <div class="form-text">Available balance will be shown for the selected account</div>
+                                    </div>
+                                    <div id="expenseSelectedAccountInfo" class="alert alert-light" style="display: none;">
+                                        <strong>Account:</strong> <span id="expenseAccountName"></span><br>
+                                        <strong>Bank:</strong> <span id="expenseBankName"></span><br>
+                                        <strong>Available Balance:</strong> ₹<span id="expenseAvailableBalance"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="expensePaymentMethod" id="expensePaymentMethodCash" value="cash">
+                                    <label class="form-check-label" for="expensePaymentMethodCash">
+                                        <i class="fas fa-money-bill-wave me-2"></i>Cash
+                                    </label>
+                                </div>
+                                
+                                <div id="expenseCashBalanceInfo" class="alert alert-light">
+                                    <strong>Available Cash Balance:</strong> ₹<span id="expenseCashBalance">0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>Expense Amount:</strong>
+                                <span class="h5 text-success">₹<span id="expenseApprovalAmount">0.00</span></span>
+                            </div>
+                            <div id="expenseInsufficientFundsWarning" class="alert alert-warning mt-2" style="display: none;">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Insufficient funds in selected payment method!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmExpenseApprovalBtn" onclick="confirmExpenseApproval()">
+                    <i class="fas fa-check me-1"></i>Approve & Process Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

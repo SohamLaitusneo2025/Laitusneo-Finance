@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="professional-dashboard">
+    <!-- Page Header Section -->
+    <div class="dashboard-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="dashboard-title">
+                        <i class="fas fa-user-circle me-3"></i>Hi {{ current_user.username or 'User' }}!
+                    </h1>
+                    <p class="dashboard-subtitle">Manage your personal information and account details</p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <div class="dashboard-actions">
+                        <button class="btn btn-primary" onclick="window.location.href='{{ url_for('settings') }}'">
+                            <i class="fas fa-cog me-2"></i>Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container-fluid mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Profile Information Section -->
+    <div class="main-content-section">
+        <div class="container-fluid">
+            <div class="row g-4">
+                <!-- Profile Information Card -->
+                <div class="col-lg-8">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5 class="chart-title">
+                                <i class="fas fa-user me-2"></i>Profile Information
+                            </h5>
+                        </div>
+                        <div class="chart-body">
+                            <form id="profileForm" method="POST" action="{{ url_for('profile') }}">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="first_name" class="form-label">
+                                                <i class="fas fa-user text-muted me-1"></i>First Name
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm" id="first_name" name="first_name" 
+                                                   value="{{ current_user.first_name or '' }}" placeholder="Enter first name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="last_name" class="form-label">
+                                                <i class="fas fa-user text-muted me-1"></i>Last Name
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm" id="last_name" name="last_name" 
+                                                   value="{{ current_user.last_name or '' }}" placeholder="Enter last name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="username" class="form-label">
+                                                <i class="fas fa-at text-muted me-1"></i>Username
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm" id="username" name="username" 
+                                                   value="{{ current_user.username or '' }}" placeholder="Enter username" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="email" class="form-label">
+                                                <i class="fas fa-envelope text-muted me-1"></i>Email Address
+                                            </label>
+                                            <input type="email" class="form-control form-control-sm" id="email" name="email" 
+                                                   value="{{ current_user.email or '' }}" placeholder="Enter email address" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mt-4">
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-primary btn-sm px-4">
+                                                <i class="fas fa-save me-2"></i>Update Profile
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Stats Card -->
+                <div class="col-lg-4">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5 class="chart-title">
+                                <i class="fas fa-chart-bar me-2"></i>Account Statistics
+                            </h5>
+                        </div>
+                        <div class="chart-body">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h4 text-primary mb-1" id="totalExpenses">0</div>
+                                        <small class="text-muted">Total Expenses</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h4 text-success mb-1" id="totalTransactions">0</div>
+                                        <small class="text-muted">Transactions</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h4 text-info mb-1" id="totalInvoices">0</div>
+                                        <small class="text-muted">Invoices</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h4 text-warning mb-1" id="accountAge">0</div>
+                                        <small class="text-muted">Days Active</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="chart-card mt-3">
+                        <div class="chart-header">
+                            <h5 class="chart-title">
+                                <i class="fas fa-bolt me-2"></i>Quick Actions
+                            </h5>
+                        </div>
+                        <div class="chart-body">
+                            <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="window.location.href='{{ url_for('expenses') }}'">
+                            <i class="fas fa-plus me-1"></i>Add Expense
+                        </button>
+                        <button class="btn btn-outline-success" onclick="window.location.href='{{ url_for('transactions') }}'">
+                            <i class="fas fa-exchange-alt me-1"></i>Add Transaction
+                        </button>
+                        <button class="btn btn-outline-info" onclick="window.location.href='{{ url_for('invoices') }}'">
+                            <i class="fas fa-file-invoice me-2"></i>Create Invoice
+                        </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load profile data and statistics
+document.addEventListener('DOMContentLoaded', function() {
+    loadProfileData();
+    loadProfileStats();
+});
+
+async function loadProfileData() {
+    try {
+        const response = await axios.get('/api/profile');
+        const user = response.data;
+        
+        // Populate form fields
+        document.getElementById('first_name').value = user.first_name || '';
+        document.getElementById('last_name').value = user.last_name || '';
+        document.getElementById('username').value = user.username || '';
+        document.getElementById('email').value = user.email || '';
+        
+    } catch (error) {
+        console.error('Error loading profile data:', error);
+        ExpenseTracker.showNotification('Error loading profile data', 'error');
+    }
+}
+
+async function loadProfileStats() {
+    try {
+        const response = await axios.get('/api/dashboard/stats');
+        const stats = response.data;
+        
+        document.getElementById('totalExpenses').textContent = stats.expenses?.total_expenses || 0;
+        document.getElementById('totalTransactions').textContent = stats.transactions?.total_transactions || 0;
+        document.getElementById('totalInvoices').textContent = stats.invoices?.total_invoices || 0;
+        
+        // Calculate account age
+        const userResponse = await axios.get('/api/profile');
+        const user = userResponse.data;
+        if (user.created_at) {
+            const accountAge = Math.floor((new Date() - new Date(user.created_at)) / (1000 * 60 * 60 * 24));
+            document.getElementById('accountAge').textContent = accountAge;
+        } else {
+            document.getElementById('accountAge').textContent = 0;
+        }
+        
+    } catch (error) {
+        console.error('Error loading profile stats:', error);
+    }
+}
+
+// Handle profile form submission
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    try {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating...';
+        submitBtn.disabled = true;
+        
+        const response = await axios.post('/api/profile/update', {
+            first_name: formData.get('first_name'),
+            last_name: formData.get('last_name'),
+            username: formData.get('username'),
+            email: formData.get('email')
+        });
+        
+        ExpenseTracker.showNotification('Profile updated successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        ExpenseTracker.showNotification('Error updating profile: ' + (error.response?.data?.error || error.message), 'error');
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+});
+</script>
+{% endblock %}

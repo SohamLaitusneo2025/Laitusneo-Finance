@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Receipt</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+        }
+        .receipt-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .logo {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 5px;
+        }
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 0 0 8px 0;
+        }
+        .company-info {
+            margin-top: 8px;
+        }
+        .company-address {
+            font-size: 12px;
+            color: #666;
+            margin: 0 0 4px 0;
+            line-height: 1.3;
+        }
+        .company-contact {
+            font-size: 11px;
+            color: #666;
+            margin: 0;
+            line-height: 1.3;
+        }
+        .receipt-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .receipt-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .detail-section {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .detail-section.full-width {
+            grid-column: 1 / -1;
+        }
+        .detail-section h3 {
+            margin: 0 0 8px 0;
+            color: #007bff;
+            font-size: 13px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 3px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 11px;
+            min-height: 16px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            min-width: 110px;
+            flex-shrink: 0;
+        }
+        .detail-value {
+            color: #333;
+            text-align: right;
+            flex-grow: 1;
+            margin-left: 10px;
+        }
+        .amount-section {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .amount-label {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        .amount-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .transaction-type {
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            display: inline-block;
+            font-weight: bold;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        .transaction-type.debit {
+            background: #dc3545;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+            color: #666;
+            font-size: 11px;
+        }
+        .print-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px auto;
+            display: block;
+        }
+        .print-button:hover {
+            background: #0056b3;
+        }
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .receipt-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 10px;
+                page-break-inside: avoid;
+            }
+            .print-button {
+                display: none;
+            }
+            .header, .receipt-details, .amount-section, .footer {
+                page-break-inside: avoid;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .receipt-details {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .detail-label {
+                min-width: 100px;
+            }
+            .detail-row {
+                font-size: 10px;
+            }
+            .company-name {
+                font-size: 18px;
+            }
+            .company-address {
+                font-size: 11px;
+            }
+            .company-contact {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <div class="header">
+            <img src="/static/L icon.jpg" alt="Company Logo" class="logo">
+            <h1 class="company-name">Laitusneo Technologies Private Limited</h1>
+            <div class="company-info">
+                <p class="company-address">NH2, Agra Road, Shanti Colony, near ITI Chauraha, Etawah, Uttar Pradesh, 206001</p>
+                <p class="company-contact">Mobile: 8265915605 | Website: www.laitusneo.com | GSTIN: 09JMVPK4466C1ZE</p>
+            </div>
+        </div>
+        
+        <h2 class="receipt-title">PAYMENT RECEIPT</h2>
+        
+        <div class="receipt-details">
+            <div class="detail-section">
+                <h3>Transaction Details</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Receipt No:</span>
+                    <span class="detail-value" id="receiptNumber">{{ receipt_number }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Unique ID:</span>
+                    <span class="detail-value" id="uniqueId">{{ unique_id }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value" id="transactionDate">{{ transaction_date }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Type:</span>
+                    <span class="detail-value" id="transactionType">{{ transaction_type }}</span>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h3>Payment Information</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Payment Method:</span>
+                    <span class="detail-value" id="paymentMethod">{{ payment_method }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Bank Account:</span>
+                    <span class="detail-value" id="bankAccount">{{ bank_account }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Category:</span>
+                    <span class="detail-value" id="category">{{ category }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value" id="status">{{ status }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="detail-section full-width">
+            <h3>Description</h3>
+            <div class="detail-row">
+                <span class="detail-label">Title:</span>
+                <span class="detail-value" id="title">{{ title }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Purpose:</span>
+                <span class="detail-value" id="purpose">{{ purpose }}</span>
+            </div>
+            {% if client_name %}
+            <div class="detail-row">
+                <span class="detail-label">Client:</span>
+                <span class="detail-value" id="clientName">{{ client_name }}</span>
+            </div>
+            {% endif %}
+            {% if invoice_number %}
+            <div class="detail-row">
+                <span class="detail-label">Invoice No:</span>
+                <span class="detail-value" id="invoiceNumber">{{ invoice_number }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="amount-section">
+            <div class="amount-label">Transaction Amount</div>
+            <div class="amount-value" id="amount">Rs. {{ amount }}</div>
+            <div class="transaction-type {{ transaction_type_class }}" id="typeBadge">{{ transaction_type_display }}</div>
+        </div>
+        
+        <div class="footer">
+            <p>This is a computer-generated receipt. No signature required.</p>
+            <p>Generated on: <span id="generatedDate">{{ generated_date }}</span></p>
+            <p>Thank you for your business!</p>
+        </div>
+        
+        <button class="print-button" onclick="window.print()">Print Receipt</button>
+    </div>
+    
+    <script>
+        // Auto-print when page loads (optional)
+        // window.onload = function() {
+        //     setTimeout(() => {
+        //         window.print();
+        //     }, 1000);
+        // };
+    </script>
+</body>
+</html>

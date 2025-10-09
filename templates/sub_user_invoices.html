@@ -1,0 +1,1912 @@
+{% extends "sub_user_base.html" %}
+
+{% block title %}Invoices{% endblock %}
+
+{% block content %}
+<style>
+/* Compact Table Styling - Same look, less spacing */
+#invoicesTable th,
+#invoicesTable td {
+    padding: 6px 8px;
+    font-size: 0.9rem;
+}
+
+#invoicesTable thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+#invoicesTable tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Compact Invoice Form Styling */
+#invoiceModal .form-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+#invoiceModal .form-control,
+#invoiceModal .form-select {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.9rem;
+}
+
+#invoiceModal .modal-body {
+    padding: 1rem;
+}
+
+#invoiceModal .modal-header {
+    padding: 0.75rem 1rem;
+}
+
+#invoiceModal .modal-footer {
+    padding: 0.75rem 1rem;
+}
+
+#invoiceModal h6 {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Company fields visibility */
+#companySection.hidden {
+    display: none !important;
+}
+
+.company-field-hidden {
+    display: none !important;
+}
+
+/* Notification styles */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+}
+
+.notification-toast {
+    margin-bottom: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+</style>
+
+<div class="professional-dashboard">
+    <!-- Header Section -->
+    <div class="header-section">
+    <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="page-header">
+                    <!-- Removed title and subtitle -->
+                    </div>
+                <div class="action-buttons">
+                    <button class="btn btn-outline-secondary search-toggle-btn me-2" id="searchToggleBtn" onclick="toggleSearch()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary me-2" onclick="loadInvoices()" title="Refresh invoice status">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-warning me-2" onclick="debugApproveInvoice()" title="Debug: Approve First Invoice">
+                        <i class="fas fa-bug"></i> Debug
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-primary add-btn me-2" onclick="openInvoiceModal('out')">
+                            <i class="fas fa-plus me-2"></i>Create Out Invoice
+                        </button>
+                        <button class="btn btn-success add-btn" onclick="openInvoiceModal('in')">
+                            <i class="fas fa-plus me-2"></i>Create In Invoice
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards Section -->
+    <div class="metrics-section">
+        <div class="container-fluid">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="totalInvoices">0</h3>
+                            <p class="metric-label">Total Invoices</p>
+                            <small class="metric-description">In: <span id="totalInAmount">₹0.00</span> | Out: <span id="totalOutAmount">₹0.00</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card success">
+                        <div class="metric-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="approvedInvoiceCount">0</h3>
+                            <p class="metric-label">Approved Invoices</p>
+                            <small class="metric-description">Total amount: <span id="approvedAmount">₹0.00</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="pendingInvoiceCount">0</h3>
+                            <p class="metric-label">Pending Invoices</p>
+                            <small class="metric-description">Awaiting approval: <span id="pendingAmount">₹0.00</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card danger">
+                        <div class="metric-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="rejectedInvoiceCount">0</h3>
+                            <p class="metric-label">Rejected Invoices</p>
+                            <small class="metric-description">Total amount: <span id="rejectedAmount">₹0.00</span></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="filters-section" id="filtersSection" style="display: none;">
+        <div class="container-fluid">
+            <div class="filter-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-search me-2"></i>Search & Filter
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="invoiceSearch" class="form-label">Search Invoices</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="invoiceSearch" placeholder="Search by invoice number or client name..." onkeyup="searchInvoices()">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterInvoiceUniqueId" class="form-label">Unique ID</label>
+                            <input type="text" class="form-control" id="filterInvoiceUniqueId" placeholder="Search by ID..." onkeyup="searchInvoices()">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterInvoiceType" class="form-label">Type</label>
+                            <select class="form-select" id="filterInvoiceType" onchange="filterInvoices()">
+                                <option value="">All Types</option>
+                                <option value="in">In Invoice</option>
+                                <option value="out">Out Invoice</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterInvoiceDateFrom" class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="filterInvoiceDateFrom" onchange="filterInvoices()">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterInvoiceDateTo" class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="filterInvoiceDateTo" onchange="filterInvoices()">
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoices Table Section -->
+    <div class="table-section">
+        <div class="container-fluid">
+            <div class="table-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-list me-2"></i>All Invoices
+                        <span class="badge bg-primary ms-2" id="invoiceCount">0</span>
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-success btn-sm" id="bulkExportInvoices" style="display: none;" onclick="bulkExportInvoices()">
+                            <i class="fas fa-file-pdf me-1"></i>Export Selected (<span id="selectedInvoicesCount">0</span>)
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" id="bulkDeleteInvoices" style="display: none;" onclick="bulkDeleteInvoices()">
+                            <i class="fas fa-trash me-1"></i>Delete Selected (<span id="selectedInvoicesDeleteCount">0</span>)
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="detail-table" id="invoicesTable">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllInvoices" class="form-check-input" title="Select All">
+                                    </th>
+                                    <th>Unique ID</th>
+                                    <th>Invoice #</th>
+                                    <th>Client</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th>Due Date</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoicesTableBody">
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>Loading invoices...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Invoice Modal -->
+<div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Create Invoice
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="invoiceForm">
+                    <input type="hidden" id="invoiceId" name="invoice_id">
+                    <input type="hidden" id="invoiceType" name="invoice_type" value="out">
+                    <div class="row g-2">
+                        <!-- Invoice Type Selection -->
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-cog me-2"></i>Invoice Configuration</h6>
+            </div>
+                        <div class="col-md-6">
+                            <label for="invoiceCategory" class="form-label">Invoice Category *</label>
+                            <select class="form-select" id="invoiceCategory" name="invoice_category" required onchange="toggleCompanyFields()">
+                                <option value="">Select Category</option>
+                                <option value="individual">Individual</option>
+                                <option value="business">Business</option>
+                            </select>
+            </div>
+                        
+                        <!-- Company Information -->
+                        <div class="col-12" id="companySection">
+                            <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-building me-2"></i>Company Information</h6>
+        </div>
+                        <div class="col-md-6" id="companyNameField">
+                            <label for="companyName" class="form-label">Company Name *</label>
+                            <input type="text" class="form-control" id="companyName" name="company_name">
+    </div>
+                        <div class="col-md-6" id="companyEmailField">
+                            <label for="companyEmail" class="form-label">Company Email</label>
+                            <input type="email" class="form-control" id="companyEmail" name="company_email">
+                        </div>
+                        <div class="col-md-6" id="companyPhoneField">
+                            <label for="companyPhone" class="form-label">Company Phone</label>
+                            <input type="tel" class="form-control" id="companyPhone" name="company_phone">
+                        </div>
+                        <div class="col-md-6" id="companyAddressField">
+                            <label for="companyAddress" class="form-label">Company Address</label>
+                            <textarea class="form-control" id="companyAddress" name="company_address" rows="1"></textarea>
+</div>
+
+                        <!-- Invoice Details -->
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-file-invoice me-2"></i>Invoice Details</h6>
+            </div>
+                        <div class="col-md-6">
+                            <label for="invoiceNumber" class="form-label">Invoice Number</label>
+                            <input type="text" class="form-control" id="invoiceNumber" name="invoice_number" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="invoiceDate" class="form-label">Invoice Date *</label>
+                            <input type="date" class="form-control" id="invoiceDate" name="invoice_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="dueDate" class="form-label">Due Date</label>
+                            <input type="date" class="form-control" id="dueDate" name="due_date">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="draft">Draft</option>
+                                <option value="sent">Sent</option>
+                                <option value="paid">Paid</option>
+                                <option value="overdue">Overdue</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Client Information -->
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-user me-2"></i>Client Information</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="clientName" class="form-label">Client Name *</label>
+                            <input type="text" class="form-control" id="clientName" name="client_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="clientEmail" class="form-label">Client Email</label>
+                            <input type="email" class="form-control" id="clientEmail" name="client_email">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="clientPhone" class="form-label">Client Phone</label>
+                            <input type="tel" class="form-control" id="clientPhone" name="client_phone">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="clientAddress" class="form-label">Client Address</label>
+                            <textarea class="form-control" id="clientAddress" name="client_address" rows="1"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="clientState" class="form-label">Client State</label>
+                            <select class="form-select" id="clientState" name="client_state">
+                                <option value="">Select State</option>
+                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                <option value="Assam">Assam</option>
+                                <option value="Bihar">Bihar</option>
+                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                <option value="Goa">Goa</option>
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Haryana">Haryana</option>
+                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                <option value="Jharkhand">Jharkhand</option>
+                                <option value="Karnataka">Karnataka</option>
+                                <option value="Kerala">Kerala</option>
+                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Manipur">Manipur</option>
+                                <option value="Meghalaya">Meghalaya</option>
+                                <option value="Mizoram">Mizoram</option>
+                                <option value="Nagaland">Nagaland</option>
+                                <option value="Odisha">Odisha</option>
+                                <option value="Punjab">Punjab</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Sikkim">Sikkim</option>
+                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                <option value="Telangana">Telangana</option>
+                                <option value="Tripura">Tripura</option>
+                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                <option value="Uttarakhand">Uttarakhand</option>
+                                <option value="West Bengal">West Bengal</option>
+                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                <option value="Chandigarh">Chandigarh</option>
+                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                <option value="Delhi">Delhi</option>
+                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                <option value="Ladakh">Ladakh</option>
+                                <option value="Lakshadweep">Lakshadweep</option>
+                                <option value="Puducherry">Puducherry</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="clientPin" class="form-label">Client PIN</label>
+                            <input type="text" class="form-control" id="clientPin" name="client_pin">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="clientGstin" class="form-label">Client GSTIN</label>
+                            <input type="text" class="form-control" id="clientGstin" name="client_gstin">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="clientPan" class="form-label">Client PAN</label>
+                            <input type="text" class="form-control" id="clientPan" name="client_pan">
+                        </div>
+                        
+                        <!-- Billing Information -->
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-map-marker-alt me-2"></i>Billing Information</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="billingCompany" class="form-label">Billing Company</label>
+                            <input type="text" class="form-control" id="billingCompany" name="billing_company_name">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="billingAddress" class="form-label">Billing Address</label>
+                            <textarea class="form-control" id="billingAddress" name="billing_address" rows="1"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="billingCity" class="form-label">Billing City</label>
+                            <input type="text" class="form-control" id="billingCity" name="billing_city">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="billingState" class="form-label">Billing State *</label>
+                            <select class="form-select" id="billingState" name="billing_state" required onchange="calculateGSTBasedOnState()">
+                                <option value="">Select State</option>
+                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                <option value="Assam">Assam</option>
+                                <option value="Bihar">Bihar</option>
+                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                <option value="Goa">Goa</option>
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Haryana">Haryana</option>
+                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                <option value="Jharkhand">Jharkhand</option>
+                                <option value="Karnataka">Karnataka</option>
+                                <option value="Kerala">Kerala</option>
+                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Manipur">Manipur</option>
+                                <option value="Meghalaya">Meghalaya</option>
+                                <option value="Mizoram">Mizoram</option>
+                                <option value="Nagaland">Nagaland</option>
+                                <option value="Odisha">Odisha</option>
+                                <option value="Punjab">Punjab</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Sikkim">Sikkim</option>
+                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                <option value="Telangana">Telangana</option>
+                                <option value="Tripura">Tripura</option>
+                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                <option value="Uttarakhand">Uttarakhand</option>
+                                <option value="West Bengal">West Bengal</option>
+                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                <option value="Chandigarh">Chandigarh</option>
+                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                <option value="Delhi">Delhi</option>
+                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                <option value="Ladakh">Ladakh</option>
+                                <option value="Lakshadweep">Lakshadweep</option>
+                                <option value="Puducherry">Puducherry</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="billingPin" class="form-label">Billing PIN</label>
+                            <input type="text" class="form-control" id="billingPin" name="billing_pin">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="gstinNumber" class="form-label">GSTIN Number</label>
+                            <input type="text" class="form-control" id="gstinNumber" name="gstin_number">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="panNumber" class="form-label">PAN Number</label>
+                            <input type="text" class="form-control" id="panNumber" name="pan_number">
+                        </div>
+                        
+                        <!-- Payment Information -->
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-credit-card me-2"></i>Payment Information</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="paymentMethod" class="form-label">Payment Method *</label>
+                            <select class="form-select" id="paymentMethod" name="payment_method" required onchange="toggleInvoiceBankSelection()">
+                                <option value="cash">Cash</option>
+                                <option value="online">Online</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6" id="invoiceBankSelectionDiv" style="display: none;">
+                            <label for="invoiceBankAccountType" class="form-label">Bank Account Type *</label>
+                            <select class="form-select" id="invoiceBankAccountType" name="bank_account_type" onchange="toggleInvoiceBankAccountDetails()">
+                                <option value="">Select account type...</option>
+                                <option value="own">Own Account</option>
+                                <option value="vendor">Vendor Account</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6" id="invoiceBankAccountDetailsDiv" style="display: none;">
+                            <label for="invoiceBankAccount" class="form-label">Bank Account *</label>
+                            <select class="form-select" id="invoiceBankAccount" name="bank_account_id">
+                                <option value="">Choose a bank account...</option>
+                            </select>
+                        </div>
+                        <div class="col-12" id="invoiceVendorBankDetailsDiv" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-university me-2"></i>Vendor Bank Details
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="invoiceVendorBankName" class="form-label">Vendor Bank Name *</label>
+                                            <input type="text" class="form-control" id="invoiceVendorBankName" name="vendor_bank_name" placeholder="e.g. State Bank of India">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="invoiceVendorAccountNumber" class="form-label">Vendor Account Number *</label>
+                                            <input type="text" class="form-control" id="invoiceVendorAccountNumber" name="vendor_account_number" placeholder="e.g. 1234567890">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="invoiceVendorIfscCode" class="form-label">Vendor IFSC Code *</label>
+                                            <input type="text" class="form-control" id="invoiceVendorIfscCode" name="vendor_ifsc_code" placeholder="e.g. SBIN0001234">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="invoiceVendorAccountHolderName" class="form-label">Vendor Account Holder Name *</label>
+                                            <input type="text" class="form-control" id="invoiceVendorAccountHolderName" name="vendor_account_holder_name" placeholder="Vendor's full name">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="invoiceVendorUpiId" class="form-label">Vendor UPI ID</label>
+                                            <input type="text" class="form-control" id="invoiceVendorUpiId" name="vendor_upi_id" placeholder="e.g. vendor@upi">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="invoiceVendorPhoneNumber" class="form-label">Vendor Phone Number</label>
+                                            <input type="text" class="form-control" id="invoiceVendorPhoneNumber" name="vendor_phone_number" placeholder="e.g. +91 9876543210">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Invoice Items -->
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-list me-2"></i>Invoice Items</h6>
+                            <div id="itemsContainer">
+                                <!-- Items will be added here -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItem()">
+                                <i class="fas fa-plus me-1"></i>Add Item
+                            </button>
+                        </div>
+                        
+                        <!-- Totals -->
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Invoice Totals</h6>
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Subtotal:</strong></td>
+                                            <td class="text-end"><span id="subtotalDisplay">₹0.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>CGST:</strong></td>
+                                            <td class="text-end"><span id="cgstDisplay">₹0.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>SGST:</strong></td>
+                                            <td class="text-end"><span id="sgstDisplay">₹0.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>IGST:</strong></td>
+                                            <td class="text-end"><span id="igstDisplay">₹0.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Other Tax:</strong></td>
+                                            <td class="text-end"><span id="taxDisplay">₹0.00</span></td>
+                                        </tr>
+                                        <tr class="table-primary">
+                                            <td><strong>Total:</strong></td>
+                                            <td class="text-end"><strong><span id="totalDisplay">₹0.00</span></strong></td>
+                                        </tr>
+                                    </table>
+                                    <!-- Hidden fields for form submission -->
+                                    <input type="hidden" id="subtotalInput" name="subtotal">
+                                    <input type="hidden" id="cgstAmountInput" name="cgst_amount">
+                                    <input type="hidden" id="sgstAmountInput" name="sgst_amount">
+                                    <input type="hidden" id="igstAmountInput" name="igst_amount">
+                                    <input type="hidden" id="taxInput" name="tax_amount">
+                                    <input type="hidden" id="totalInput" name="total_amount">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Information -->
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-sticky-note me-2"></i>Additional Information</h6>
+                        </div>
+                        <div class="col-12">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Any additional notes or comments"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label for="termsConditions" class="form-label">Terms & Conditions</label>
+                            <textarea class="form-control" id="termsConditions" name="terms_conditions" rows="2" placeholder="Terms and conditions"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveInvoice()">
+                    <i class="fas fa-save me-1"></i>Save Invoice
+                </button>
+            </div>
+        </div>
+    </div>
+                        </div>
+                        
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteConfirmMessage">Are you sure you want to delete this item?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+                        </div>
+                        
+<!-- View Invoice Modal -->
+<div class="modal fade" id="viewInvoiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Invoice Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="invoiceDetails">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+                        </div>
+                        
+<!-- Approval Request Modal -->
+<div class="modal fade" id="approvalRequestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-lock me-2"></i>Download Approval Required
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This is an "Out" invoice that requires approval from your main user before you can download the PDF.
+                </div>
+                <p id="approvalRequestMessage">Would you like to request approval to download this invoice?</p>
+                <input type="hidden" id="approvalInvoiceId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="requestDownloadApproval()">
+                    <i class="fas fa-paper-plane me-1"></i>Request Approval
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+.dropdown-menu.show {
+    display: block;
+    position: absolute;
+    z-index: 1000;
+}
+
+.dropdown-menu {
+    display: none;
+}
+
+.status-options-container {
+    position: absolute;
+    z-index: 1000;
+    right: 10px;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+}
+
+.status-options {
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+}
+</style>
+<script>
+// Global variables
+let invoices = [];
+let filteredInvoices = [];
+let itemCounter = 0;
+
+// Load invoices on page load
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Sub user invoice page loaded');
+    
+    // Check authentication status first
+    console.log('=== AUTHENTICATION DEBUG ===');
+    try {
+        const authResponse = await fetch('/api/auth-status');
+        const authData = await authResponse.json();
+        console.log('Authentication Status:', authData);
+        
+        if (!authData.is_sub_user) {
+            console.error('❌ NOT LOGGED IN AS SUB-USER!');
+            console.log('Session keys:', authData.session_keys);
+            console.log('Is main user:', authData.is_main_user);
+            console.log('Is sub user:', authData.is_sub_user);
+            
+            showNotification('Please log in as a sub-user to access this page.', 'error');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 3000);
+            return;
+        }
+        
+        console.log('✅ Sub-user authentication confirmed');
+        console.log('Sub-user data:', authData.session_data);
+    } catch (error) {
+        console.error('Error checking auth status:', error);
+    }
+    console.log('=== END AUTHENTICATION DEBUG ===');
+    
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    const futureDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    document.getElementById('invoiceDate').value = today;
+    document.getElementById('dueDate').value = futureDate;
+    
+    // Add first item
+    addItem();
+    
+    // Load invoices data
+    loadInvoices();
+    
+    // Initialize any dropdowns that might be in the initial HTML
+    initializeDropdowns();
+    
+    // Add event listener for state change to recalculate taxes
+    const clientStateSelect = document.getElementById('clientState');
+    if (clientStateSelect) {
+        clientStateSelect.addEventListener('change', function() {
+            console.log('State changed to:', this.value);
+            calculateTotals(); // Recalculate taxes when state changes
+        });
+    }
+    
+    // Auto-refresh invoices every 5 seconds to catch status updates
+    setInterval(function() {
+        console.log('Auto-refreshing invoices...');
+        
+        // Show a subtle indicator that refresh is happening
+        const refreshBtn = document.querySelector('button[onclick="loadInvoices()"]');
+        if (refreshBtn) {
+            const originalIcon = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i>';
+            
+            loadInvoices().then(() => {
+                setTimeout(() => {
+                    refreshBtn.innerHTML = originalIcon;
+                }, 500);
+            });
+        } else {
+            loadInvoices();
+        }
+    }, 5000); // 5 seconds
+});
+
+// Add invoice item
+function addItem() {
+    const container = document.getElementById('itemsContainer');
+    const itemIndex = container.children.length;
+    
+    const itemHTML = `
+        <div class="invoice-item border rounded p-3 mb-3" data-item-index="${itemIndex}">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Item ${itemIndex + 1}</h6>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(${itemIndex})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Description *</label>
+                    <input type="text" class="form-control" name="items[${itemIndex}][description]" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Quantity *</label>
+                    <input type="number" class="form-control" name="items[${itemIndex}][quantity]" min="0" step="1" value="1" required onchange="calculateItemTotal(this)">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Unit Price *</label>
+                    <input type="number" class="form-control" name="items[${itemIndex}][unit_price]" min="0" step="0.01" required onchange="calculateItemTotal(this)">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Total</label>
+                    <input type="number" class="form-control" name="items[${itemIndex}][total_price]" readonly>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', itemHTML);
+}
+
+// Remove invoice item
+function removeItem(index) {
+    const item = document.querySelector(`[data-item-index="${index}"]`);
+    if (item) {
+        item.remove();
+        calculateTotals();
+    }
+}
+
+// Calculate item total
+function calculateItemTotal(input) {
+    const itemContainer = input.closest('.invoice-item');
+    const quantityInput = itemContainer.querySelector('[name*="[quantity]"]');
+    const priceInput = itemContainer.querySelector('[name*="[unit_price]"]');
+    const totalInput = itemContainer.querySelector('[name*="[total_price]"]');
+    
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    const total = quantity * price;
+    
+    totalInput.value = total.toFixed(2);
+    calculateTotals();
+}
+
+// Calculate totals
+function calculateTotals() {
+    try {
+        console.log('Calculating totals...');
+        
+        let subtotal = 0;
+        
+        // Calculate subtotal from items
+        const itemTotals = document.querySelectorAll('[name*="[total_price]"]');
+        itemTotals.forEach(input => {
+            subtotal += parseFloat(input.value) || 0;
+        });
+        
+        console.log('Subtotal calculated:', subtotal);
+        
+        // Get client state for GST calculation
+        const clientState = document.getElementById('clientState')?.value || '';
+        console.log('Client state:', clientState);
+        
+        // Calculate GST based on state
+        let cgstAmount = 0;
+        let sgstAmount = 0;
+        let igstAmount = 0;
+        
+        if (clientState === 'Uttar Pradesh') {
+            // For Uttar Pradesh: CGST 9% + SGST 9%
+            cgstAmount = subtotal * 0.09; // 9% CGST
+            sgstAmount = subtotal * 0.09; // 9% SGST
+            igstAmount = 0; // No IGST for same state
+            console.log('UP state: CGST 9% + SGST 9%');
+        } else if (clientState && clientState !== '') {
+            // For other states: IGST 18%
+            cgstAmount = 0; // No CGST for inter-state
+            sgstAmount = 0; // No SGST for inter-state
+            igstAmount = subtotal * 0.18; // 18% IGST
+            console.log('Other state: IGST 18%');
+        } else {
+            // No state selected: default to IGST 18%
+            cgstAmount = 0;
+            sgstAmount = 0;
+            igstAmount = subtotal * 0.18; // 18% IGST
+            console.log('No state selected: defaulting to IGST 18%');
+        }
+        
+        const otherTax = 0;
+        const total = subtotal + cgstAmount + sgstAmount + igstAmount + otherTax;
+        
+        console.log('Tax amounts - CGST:', cgstAmount, 'SGST:', sgstAmount, 'IGST:', igstAmount, 'Total:', total);
+        
+        // Update display with error handling
+        const elements = {
+            'subtotalDisplay': `₹${subtotal.toFixed(2)}`,
+            'cgstDisplay': `₹${cgstAmount.toFixed(2)}`,
+            'sgstDisplay': `₹${sgstAmount.toFixed(2)}`,
+            'igstDisplay': `₹${igstAmount.toFixed(2)}`,
+            'taxDisplay': `₹${otherTax.toFixed(2)}`,
+            'totalDisplay': `₹${total.toFixed(2)}`
+        };
+        
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+        
+        // Update hidden fields
+        const hiddenFields = {
+            'subtotalInput': subtotal.toFixed(2),
+            'cgstAmountInput': cgstAmount.toFixed(2),
+            'sgstAmountInput': sgstAmount.toFixed(2),
+            'igstAmountInput': igstAmount.toFixed(2),
+            'taxInput': otherTax.toFixed(2),
+            'totalInput': total.toFixed(2)
+        };
+        
+        Object.entries(hiddenFields).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.value = value;
+            }
+        });
+        
+        console.log('Totals calculation completed successfully');
+        
+    } catch (error) {
+        console.error('Error in calculateTotals:', error);
+    }
+}
+
+// Save invoice function
+async function saveInvoice() {
+    try {
+        console.log('=== STARTING INVOICE SAVE ===');
+        
+        // Get the form
+        const form = document.getElementById('invoiceForm');
+        if (!form) {
+            throw new Error('Invoice form not found');
+        }
+        
+        // Check if we're editing an existing invoice
+        const invoiceId = document.getElementById('invoiceId').value;
+        const isEdit = invoiceId && invoiceId !== '';
+        
+        // Get invoice type
+        const invoiceType = document.getElementById('invoiceType').value;
+        
+        // Collect all form data
+        const formData = new FormData(form);
+        const data = {};
+        
+        // Convert FormData to object
+        for (let [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+        
+        // Set invoice type in data
+        data.invoice_type = invoiceType;
+        
+        // Handle vendor bank details if vendor account is selected
+        const bankAccountType = data.bank_account_type;
+        if (bankAccountType === 'vendor') {
+            data.vendor_bank_details = {
+                bank_name: data.vendor_bank_name,
+                account_number: data.vendor_account_number,
+                ifsc_code: data.vendor_ifsc_code,
+                account_holder_name: data.vendor_account_holder_name,
+                upi_id: data.vendor_upi_id,
+                phone_number: data.vendor_phone_number
+            };
+        }
+        
+        // Handle individual vs business logic
+        const invoiceCategory = document.getElementById('invoiceCategory').value;
+        if (invoiceCategory === 'individual') {
+            // For individual invoices, use client details as company details
+            data.company_name = data.client_name;
+            data.company_email = data.client_email;
+            data.company_phone = data.client_phone;
+            data.company_address = data.client_address;
+        }
+        
+        console.log('Basic form data collected:', data);
+        
+        // Collect items manually
+        const items = [];
+        const itemElements = document.querySelectorAll('.invoice-item');
+        
+        console.log('Found item elements:', itemElements.length);
+        
+        itemElements.forEach((itemElement, index) => {
+            const descriptionInput = itemElement.querySelector('[name*="[description]"]');
+            const quantityInput = itemElement.querySelector('[name*="[quantity]"]');
+            const unitPriceInput = itemElement.querySelector('[name*="[unit_price]"]');
+            const totalPriceInput = itemElement.querySelector('[name*="[total_price]"]');
+            
+            if (descriptionInput && quantityInput && unitPriceInput) {
+                const item = {
+                    description: descriptionInput.value,
+                    quantity: parseFloat(quantityInput.value) || 0,
+                    unit_price: parseFloat(unitPriceInput.value) || 0,
+                    total_price: parseFloat(totalPriceInput.value) || 0
+                };
+                
+                if (item.description && item.quantity > 0 && item.unit_price > 0) {
+                    items.push(item);
+                    console.log(`Item ${index + 1} collected:`, item);
+                }
+            }
+        });
+        
+        data.items = items;
+        console.log('Items collected:', items);
+        
+        // Validate required fields
+        if (!data.client_name || !data.invoice_date) {
+            showNotification('Please fill in all required fields (Client Name, Invoice Date).', 'error');
+            return;
+        }
+        
+        if (items.length === 0) {
+            showNotification('Please add at least one invoice item.', 'error');
+            return;
+        }
+        
+        // Calculate totals
+        calculateTotals();
+        
+        // Get calculated values from hidden fields
+        data.subtotal = parseFloat(document.getElementById('subtotalInput')?.value) || 0;
+        data.cgst_amount = parseFloat(document.getElementById('cgstAmountInput')?.value) || 0;
+        data.sgst_amount = parseFloat(document.getElementById('sgstAmountInput')?.value) || 0;
+        data.igst_amount = parseFloat(document.getElementById('igstAmountInput')?.value) || 0;
+        data.tax_amount = parseFloat(document.getElementById('taxInput')?.value) || 0;
+        data.total_amount = parseFloat(document.getElementById('totalInput')?.value) || 0;
+        
+        // Set GST rates
+        // Set GST rates based on client state
+        const clientState = document.getElementById('clientState')?.value || '';
+        if (clientState === 'Uttar Pradesh') {
+            data.cgst_rate = 9;
+            data.sgst_rate = 9;
+            data.igst_rate = 0;
+        } else {
+            data.cgst_rate = 0;
+            data.sgst_rate = 0;
+            data.igst_rate = 18;
+        }
+        
+        console.log('Final data to send:', data);
+        
+        // Set up API endpoint and method based on whether we're creating or updating
+        let url = '/api/sub-user/invoices';
+        let method = 'POST';
+        
+        if (isEdit) {
+            url = `/api/sub-user/invoices/${invoiceId}`;
+            method = 'PUT';
+        }
+        
+        // Send to API
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log('API Response:', result);
+        
+        if (result.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('invoiceModal'));
+            modal.hide();
+            await loadInvoices();
+            
+            // Show different messages based on invoice type
+            if (data.invoice_type === 'in') {
+                showNotification(`IN Invoice ${isEdit ? 'updated' : 'created'} successfully! Money has been added to main user account and invoice is automatically approved.`, 'success');
+            } else {
+                showNotification(`OUT Invoice ${isEdit ? 'updated' : 'created'} successfully! It is pending approval from the main user.`, 'success');
+            }
+        } else {
+            showNotification(result.error || `Failed to ${isEdit ? 'update' : 'create'} invoice`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error saving invoice:', error);
+        showNotification('Failed to save invoice: ' + error.message, 'error');
+    }
+}
+
+// Load invoices
+async function loadInvoices() {
+    try {
+        console.log('Loading invoices...');
+        const response = await fetch(`/api/sub-user/invoices?_t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Response error:', errorText);
+            
+            if (response.status === 401) {
+                showNotification('Authentication required. Please log in as a sub-user.', 'error');
+                // Redirect to login page
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Invoices loaded:', data);
+        console.log('DEBUG: Invoice statuses:', data.map(inv => ({id: inv.id, number: inv.invoice_number, status: inv.status, type: inv.invoice_type})));
+        
+        const oldInvoices = invoices || [];
+        invoices = Array.isArray(data) ? data : [];
+        filteredInvoices = [...invoices];
+        
+        // Check for status changes and notify user
+        if (oldInvoices.length > 0) {
+            invoices.forEach(newInvoice => {
+                const oldInvoice = oldInvoices.find(old => old.id === newInvoice.id);
+                if (oldInvoice && oldInvoice.status !== newInvoice.status) {
+                    const statusText = newInvoice.status === 'approved' ? 'Approved' : 
+                                     newInvoice.status === 'rejected' ? 'Rejected' : 'Pending';
+                    showNotification(`Invoice ${newInvoice.invoice_number} status updated to: ${statusText}`, 
+                                   newInvoice.status === 'approved' ? 'success' : 
+                                   newInvoice.status === 'rejected' ? 'error' : 'info');
+                }
+            });
+        }
+        
+        renderInvoicesTable();
+        updateSummaryCards();
+        
+    } catch (error) {
+        console.error('Error loading invoices:', error);
+        showNotification(`Failed to load invoices: ${error.message}`, 'error');
+    }
+}
+
+// Render invoices table
+function renderInvoicesTable() {
+    const tbody = document.getElementById('invoicesTableBody');
+    
+    // Update the count badge in the table header
+    document.getElementById('invoiceCount').textContent = filteredInvoices.length;
+    
+    if (filteredInvoices.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-muted">
+                    <i class="fas fa-inbox me-2"></i>No invoices found
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = filteredInvoices.map(invoice => `
+        <tr>
+            <td>
+                <input type="checkbox" class="form-check-input invoice-checkbox" value="${invoice.id}">
+            </td>
+            <td>
+                <code class="text-primary">${invoice.unique_id || 'N/A'}</code>
+            </td>
+            <td>
+                <strong>${invoice.invoice_number}</strong>
+            </td>
+            <td>${invoice.client_name}</td>
+            <td>
+                <span class="badge bg-${invoice.invoice_type === 'in' ? 'success' : 'primary'}">
+                    ${invoice.invoice_type === 'in' ? 'In' : 'Out'}
+                </span>
+            </td>
+            <td>${new Date(invoice.invoice_date).toLocaleDateString()}</td>
+            <td>${invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '-'}</td>
+            <td>₹${parseFloat(invoice.total_amount).toFixed(2)}</td>
+            <td>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-info" onclick="viewInvoice(${invoice.id})" title="View Invoice">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    ${getDownloadButton(invoice)}
+                    <button class="btn btn-outline-danger" onclick="deleteInvoice(${invoice.id})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Get status color for badge
+function getStatusColor(status) {
+    switch (status) {
+        case 'approved': return 'success';
+        case 'pending': return 'warning';
+        case 'rejected': return 'danger';
+        case 'draft': return 'secondary';
+        default: return 'secondary';
+    }
+}
+
+// Get enhanced status badge that shows approval status in Status column
+function getEnhancedStatusBadge(invoice) {
+    console.log('DEBUG: getEnhancedStatusBadge called for invoice:', {
+        id: invoice.id, 
+        number: invoice.invoice_number, 
+        type: invoice.invoice_type, 
+        status: invoice.status
+    });
+    
+    if (invoice.invoice_type === 'in') {
+        // For IN invoices, show as approved since they're auto-approved
+        return '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Approved</span>';
+    } else {
+        // For OUT invoices, show approval status in the Status column
+        const status = invoice.status || 'pending'; // Default to pending if status is null/undefined
+        console.log('DEBUG: OUT invoice status for badge:', status);
+        
+        switch (status) {
+            case 'approved':
+                return '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Approved</span>';
+            case 'rejected':
+                return '<span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Rejected</span>';
+            case 'pending':
+            case '':
+            case null:
+            case undefined:
+            default:
+                return '<span class="badge bg-warning"><i class="fas fa-clock me-1"></i>Pending</span>';
+        }
+    }
+}
+
+// Enhanced status badge function removed - using separate Status and Approval columns now
+
+// Get appropriate download button based on invoice type and approval status
+function getDownloadButton(invoice) {
+    console.log('DEBUG: getDownloadButton called for invoice:', {
+        id: invoice.id, 
+        number: invoice.invoice_number, 
+        type: invoice.invoice_type, 
+        status: invoice.status, 
+        download_status: invoice.download_status
+    });
+    
+    if (invoice.invoice_type === 'in') {
+        // IN invoices can be downloaded directly (auto-approved)
+        return `<button class="btn btn-outline-success" onclick="downloadInvoice(${invoice.id})" title="Download PDF">
+                    <i class="fas fa-download"></i>
+                </button>`;
+    } else {
+        // OUT invoices - check approval status from the invoice status
+        const status = invoice.status || 'pending';
+        console.log('DEBUG: OUT invoice status:', status);
+        
+        if (status === 'approved') {
+            return `<button class="btn btn-outline-success" onclick="downloadInvoice(${invoice.id})" title="Download PDF (Approved)">
+                        <i class="fas fa-download"></i>
+                    </button>`;
+        } else if (status === 'rejected') {
+            return `<button class="btn btn-outline-secondary" onclick="requestDownloadApprovalForInvoice(${invoice.id})" title="Request Again (Rejected)">
+                        <i class="fas fa-redo"></i>
+                    </button>`;
+        } else {
+            // Pending approval - always show a button
+            const downloadStatus = invoice.download_status || 'not_requested';
+            console.log('DEBUG: Download status for pending invoice:', downloadStatus);
+            
+            if (downloadStatus === 'pending') {
+                return `<button class="btn btn-outline-warning" onclick="checkApprovalStatus(${invoice.id})" title="Approval Pending" disabled>
+                            <i class="fas fa-clock"></i>
+                        </button>`;
+            } else if (downloadStatus === 'approved') {
+                return `<button class="btn btn-outline-success" onclick="downloadInvoice(${invoice.id})" title="Download PDF (Download Approved)">
+                            <i class="fas fa-download"></i>
+                        </button>`;
+            } else {
+                return `<button class="btn btn-outline-primary" onclick="requestDownloadApprovalForInvoice(${invoice.id})" title="Request Download Approval">
+                            <i class="fas fa-lock"></i>
+                        </button>`;
+            }
+        }
+    }
+}
+
+// Update summary cards
+function updateSummaryCards() {
+    const totalInvoices = invoices.length;
+    const inInvoices = invoices.filter(inv => inv.invoice_type === 'in');
+    const outInvoices = invoices.filter(inv => inv.invoice_type === 'out' || !inv.invoice_type);
+    const approvedInvoices = invoices.filter(inv => inv.status === 'approved');
+    const pendingInvoices = invoices.filter(inv => inv.status === 'pending');
+    const rejectedInvoices = invoices.filter(inv => inv.status === 'rejected');
+    
+    // Calculate total amounts
+    const inAmount = inInvoices.reduce((sum, inv) => sum + parseFloat(inv.total_amount), 0);
+    const outAmount = outInvoices.reduce((sum, inv) => sum + parseFloat(inv.total_amount), 0);
+    const approvedAmount = approvedInvoices.reduce((sum, inv) => sum + parseFloat(inv.total_amount), 0);
+    const pendingAmount = pendingInvoices.reduce((sum, inv) => sum + parseFloat(inv.total_amount), 0);
+    const rejectedAmount = rejectedInvoices.reduce((sum, inv) => sum + parseFloat(inv.total_amount), 0);
+    
+    // Update the summary cards
+    document.getElementById('totalInvoices').innerHTML = `${totalInvoices} <small style="font-size: 0.7em; color: #6c757d;">(In: ${inInvoices.length} | Out: ${outInvoices.length})</small>`;
+    document.getElementById('totalInAmount').textContent = `₹${inAmount.toFixed(2)}`;
+    document.getElementById('totalOutAmount').textContent = `₹${outAmount.toFixed(2)}`;
+    
+    document.getElementById('approvedInvoiceCount').textContent = approvedInvoices.length;
+    document.getElementById('approvedAmount').textContent = `₹${approvedAmount.toFixed(2)}`;
+    
+    document.getElementById('pendingInvoiceCount').textContent = pendingInvoices.length;
+    document.getElementById('pendingAmount').textContent = `₹${pendingAmount.toFixed(2)}`;
+    
+    document.getElementById('rejectedInvoiceCount').textContent = rejectedInvoices.length;
+    document.getElementById('rejectedAmount').textContent = `₹${rejectedAmount.toFixed(2)}`;
+}
+
+// Search invoices
+function searchInvoices() {
+    const searchTerm = document.getElementById('invoiceSearch').value.toLowerCase();
+    const uniqueIdFilter = document.getElementById('filterInvoiceUniqueId').value.toLowerCase();
+    const typeFilter = document.getElementById('filterInvoiceType').value;
+    const dateFrom = document.getElementById('filterInvoiceDateFrom').value;
+    const dateTo = document.getElementById('filterInvoiceDateTo').value;
+    
+    filteredInvoices = invoices.filter(invoice => {
+        const matchesSearch = invoice.invoice_number.toLowerCase().includes(searchTerm) ||
+                            invoice.client_name.toLowerCase().includes(searchTerm);
+        const matchesUniqueId = !uniqueIdFilter || (invoice.unique_id && invoice.unique_id.toLowerCase().includes(uniqueIdFilter));
+        const matchesType = !typeFilter || invoice.invoice_type === typeFilter;
+        
+        let matchesDateRange = true;
+        if (dateFrom || dateTo) {
+            const invoiceDate = new Date(invoice.invoice_date);
+            if (dateFrom && invoiceDate < new Date(dateFrom)) matchesDateRange = false;
+            if (dateTo && invoiceDate > new Date(dateTo)) matchesDateRange = false;
+        }
+        
+        return matchesSearch && matchesUniqueId && matchesType && matchesDateRange;
+    });
+    
+    renderInvoicesTable();
+}
+
+function filterInvoices() {
+    searchInvoices();
+}
+
+function clearFilters() {
+    document.getElementById('invoiceSearch').value = '';
+    document.getElementById('filterInvoiceUniqueId').value = '';
+    document.getElementById('filterInvoiceType').value = '';
+    document.getElementById('filterInvoiceDateFrom').value = '';
+    document.getElementById('filterInvoiceDateTo').value = '';
+    filteredInvoices = [...invoices];
+    renderInvoicesTable();
+}
+
+// Toggle search functionality
+function toggleSearch() {
+    const filtersSection = document.getElementById('filtersSection');
+    const searchBtn = document.getElementById('searchToggleBtn');
+    
+    if (filtersSection.style.display === 'none') {
+        filtersSection.style.display = 'block';
+        searchBtn.classList.add('active');
+    } else {
+        filtersSection.style.display = 'none';
+        searchBtn.classList.remove('active');
+    }
+}
+
+// Function to open invoice modal with specific type
+function openInvoiceModal(type) {
+    // Reset form
+    document.getElementById('invoiceForm').reset();
+    document.getElementById('itemsContainer').innerHTML = '';
+    document.getElementById('invoiceId').value = '';
+    document.getElementById('invoiceType').value = type;
+    
+    // Set default category to business and show company fields
+    document.getElementById('invoiceCategory').value = 'business';
+    toggleCompanyFields();
+    
+    // Update modal title and button text based on type
+    if (type === 'in') {
+        document.getElementById('invoiceModal').querySelector('.modal-title').innerHTML = '<i class="fas fa-plus me-2"></i>Create In Invoice';
+        const saveButton = document.querySelector('#invoiceModal .modal-footer .btn-primary');
+        if (saveButton) {
+            saveButton.innerHTML = '<i class="fas fa-save me-1"></i>Create In Invoice';
+        }
+        } else {
+        document.getElementById('invoiceModal').querySelector('.modal-title').innerHTML = '<i class="fas fa-plus me-2"></i>Create Out Invoice';
+        const saveButton = document.querySelector('#invoiceModal .modal-footer .btn-primary');
+        if (saveButton) {
+            saveButton.innerHTML = '<i class="fas fa-save me-1"></i>Create Out Invoice';
+        }
+    }
+    
+    // Add first item
+    addItem();
+    calculateTotals();
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+    modal.show();
+}
+
+// Function to toggle company fields based on invoice category
+function toggleCompanyFields() {
+    const category = document.getElementById('invoiceCategory').value;
+    const companySection = document.getElementById('companySection');
+    const companyFields = [
+        'companyNameField',
+        'companyEmailField', 
+        'companyPhoneField',
+        'companyAddressField'
+    ];
+    
+    if (category === 'individual') {
+        // Hide company section and fields
+        companySection.classList.add('hidden');
+        companyFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.classList.add('company-field-hidden');
+                // Clear values and remove required attribute
+                const input = field.querySelector('input, textarea');
+                if (input) {
+                    input.value = '';
+                    input.removeAttribute('required');
+                }
+            }
+        });
+        
+        // Update company name to use client name for individual invoices
+        const clientName = document.getElementById('clientName').value;
+        if (clientName) {
+            document.getElementById('companyName').value = clientName;
+        }
+    } else if (category === 'business') {
+        // Show company section and fields
+        companySection.classList.remove('hidden');
+        companyFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.classList.remove('company-field-hidden');
+                // Add required attribute back to company name
+                if (fieldId === 'companyNameField') {
+                    const input = field.querySelector('input');
+                    if (input) {
+                        input.setAttribute('required', 'required');
+                    }
+                }
+            }
+        });
+    }
+}
+
+
+// Check approval status for an invoice (for pending approvals)
+function checkApprovalStatus(invoiceId) {
+    showNotification('Approval is pending. Please wait for the main user to approve your request.', 'info');
+}
+
+// Request download approval for out invoice
+function requestDownloadApprovalForInvoice(invoiceId) {
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (!invoice) {
+        showNotification('Invoice not found', 'error');
+        return;
+    }
+    
+    if (invoice.invoice_type !== 'out') {
+        // For "in" invoices, allow direct download
+        downloadInvoice(invoiceId);
+        return;
+    }
+    
+    // Show approval request modal
+    document.getElementById('approvalInvoiceId').value = invoiceId;
+    document.getElementById('approvalRequestMessage').textContent = `Would you like to request approval to download invoice ${invoice.invoice_number}?`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('approvalRequestModal'));
+    modal.show();
+}
+
+// Request download approval
+async function requestDownloadApproval() {
+    const invoiceId = document.getElementById('approvalInvoiceId').value;
+    
+    if (!invoiceId) {
+        showNotification('Invoice ID not found', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/sub-user/request-invoice-download', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ invoice_id: parseInt(invoiceId) })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('approvalRequestModal'));
+            modal.hide();
+            showNotification('Download approval request sent successfully!', 'success');
+            // Reload invoices to show updated status
+            loadInvoices();
+        } else {
+            showNotification(result.message || 'Failed to send approval request', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error requesting download approval:', error);
+        showNotification('Failed to send approval request: ' + error.message, 'error');
+    }
+}
+
+// Direct download for approved invoices
+function downloadInvoice(id) {
+    try {
+        console.log(`Downloading invoice ${id}`);
+        
+        // Create a temporary link to trigger download
+        const link = document.createElement('a');
+        link.href = `/api/sub-user/invoices/${id}/pdf`;
+        link.download = `invoice_${id}.pdf`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success notification
+        showNotification('PDF download started successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error downloading invoice:', error);
+        showNotification('Failed to download PDF: ' + error.message, 'error');
+    }
+}
+
+// Edit invoice functionality (placeholder)
+function editInvoice(id) {
+    showNotification('Edit functionality will be available soon.', 'info');
+}
+
+// Debug function to manually approve the first OUT invoice
+async function debugApproveInvoice() {
+    const outInvoice = invoices.find(inv => inv.invoice_type === 'out');
+    if (!outInvoice) {
+        showNotification('No OUT invoice found to approve', 'error');
+        return;
+    }
+    
+    console.log('DEBUG: Attempting to approve invoice:', outInvoice);
+    
+    try {
+        const response = await fetch(`/api/debug/invoice/${outInvoice.id}/status`);
+        const data = await response.json();
+        console.log('DEBUG: Current invoice status in database:', data);
+        
+        showNotification(`Invoice ${outInvoice.invoice_number} current status: ${data.invoice?.status || 'unknown'}`, 'info');
+        
+        // Force refresh
+        loadInvoices();
+        
+    } catch (error) {
+        console.error('DEBUG: Error checking invoice status:', error);
+        showNotification('Error checking invoice status: ' + error.message, 'error');
+    }
+}
+
+// View invoice
+function viewInvoice(id) {
+    try {
+        const invoice = invoices.find(i => i.id === parseInt(id));
+        if (!invoice) {
+            showNotification('Invoice not found!', 'error');
+        return;
+    }
+    
+        const detailsDiv = document.getElementById('invoiceDetails');
+        const invoiceDate = new Date(invoice.invoice_date).toLocaleDateString();
+        const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
+        const createdDate = invoice.created_at ? new Date(invoice.created_at).toLocaleString() : 'N/A';
+        
+        detailsDiv.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Invoice Number:</strong></label>
+                    <p class="form-control-plaintext"><code>${invoice.invoice_number || 'N/A'}</code></p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Unique ID:</strong></label>
+                    <p class="form-control-plaintext"><code>${invoice.unique_id || 'N/A'}</code></p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Client Name:</strong></label>
+                    <p class="form-control-plaintext">${invoice.client_name || 'N/A'}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Invoice Type:</strong></label>
+                    <p class="form-control-plaintext">
+                        <span class="badge bg-${invoice.invoice_type === 'in' ? 'success' : 'primary'}">
+                            ${invoice.invoice_type === 'in' ? 'Incoming' : 'Outgoing'}
+                        </span>
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Total Amount:</strong></label>
+                    <p class="form-control-plaintext"><strong>₹${parseFloat(invoice.total_amount || 0).toFixed(2)}</strong></p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Invoice Date:</strong></label>
+                    <p class="form-control-plaintext">${invoiceDate}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Due Date:</strong></label>
+                    <p class="form-control-plaintext">${dueDate}</p>
+                </div>
+            </div>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('viewInvoiceModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error in viewInvoice:', error);
+        showNotification('Error loading invoice details: ' + error.message, 'error');
+    }
+}
+
+// Delete invoice
+async function deleteInvoice(id) {
+    // Find the invoice to get its details for the confirmation message
+    const invoice = invoices.find(inv => inv.id === id);
+    if (!invoice) {
+        showNotification('Invoice not found', 'error');
+        return;
+    }
+    
+    // Create a more detailed confirmation message
+    let confirmMessage = `Are you sure you want to delete invoice ${invoice.invoice_number}?\n\n`;
+    confirmMessage += `Client: ${invoice.client_name}\n`;
+    confirmMessage += `Type: ${invoice.invoice_type === 'in' ? 'IN' : 'OUT'} Invoice\n`;
+    confirmMessage += `Amount: ₹${parseFloat(invoice.total_amount).toFixed(2)}\n\n`;
+    
+    if (invoice.invoice_type === 'in' && invoice.status === 'approved') {
+        confirmMessage += `⚠️ Warning: This IN invoice has already added money to the main user's account. `;
+        confirmMessage += `Deleting it will reverse this transaction and deduct the money.\n\n`;
+    }
+    
+    confirmMessage += `This action cannot be undone.`;
+    
+    if (confirm(confirmMessage)) {
+        try {
+            console.log(`Deleting invoice ${id} (${invoice.invoice_number})`);
+            
+            // Show loading notification
+            showNotification('Deleting invoice...', 'info');
+            
+            const response = await fetch(`/api/sub-user/invoices/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            console.log('Delete response:', result);
+            
+            if (response.ok && result.success) {
+                await loadInvoices();
+                showNotification(result.message || 'Invoice deleted successfully!', 'success');
+            } else {
+                let errorMessage = result.message || 'Failed to delete invoice';
+                
+                // Provide more user-friendly error messages
+                if (errorMessage.includes('Transaction already in progress')) {
+                    errorMessage = 'Another operation is in progress. Please wait a moment and try again.';
+                } else if (errorMessage.includes('not found') || errorMessage.includes('access denied')) {
+                    errorMessage = 'Invoice not found or you do not have permission to delete it.';
+                }
+                
+                console.error('Delete failed:', errorMessage);
+                showNotification(errorMessage, 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting invoice:', error);
+            
+            let errorMessage = 'Failed to delete invoice';
+            if (error.message) {
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage = `Failed to delete invoice: ${error.message}`;
+                }
+            }
+            
+            showNotification(errorMessage, 'error');
+        }
+    }
+}
+
+// Initialize dropdowns
+function initializeDropdowns() {
+    // No special dropdown initialization needed
+}
+
+// Toggle bank selection based on payment method (for invoices)
+function toggleInvoiceBankSelection() {
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    const bankDiv = document.getElementById('invoiceBankSelectionDiv');
+    const bankAccountDetailsDiv = document.getElementById('invoiceBankAccountDetailsDiv');
+    const vendorBankDetailsDiv = document.getElementById('invoiceVendorBankDetailsDiv');
+    
+    if (paymentMethod === 'online') {
+        bankDiv.style.display = 'block';
+    } else {
+        bankDiv.style.display = 'none';
+        bankAccountDetailsDiv.style.display = 'none';
+        vendorBankDetailsDiv.style.display = 'none';
+        // Reset form fields
+        document.getElementById('invoiceBankAccountType').value = '';
+        document.getElementById('invoiceBankAccount').innerHTML = '<option value="">Choose a bank account...</option>';
+    }
+}
+
+// Toggle bank account details based on account type (for invoices)
+function toggleInvoiceBankAccountDetails() {
+    const accountType = document.getElementById('invoiceBankAccountType').value;
+    const bankAccountDetailsDiv = document.getElementById('invoiceBankAccountDetailsDiv');
+    const vendorBankDetailsDiv = document.getElementById('invoiceVendorBankDetailsDiv');
+    
+    if (accountType === 'own') {
+        bankAccountDetailsDiv.style.display = 'block';
+        vendorBankDetailsDiv.style.display = 'none';
+        loadInvoiceOwnBankAccount();
+        clearInvoiceVendorBankDetails();
+    } else if (accountType === 'vendor') {
+        bankAccountDetailsDiv.style.display = 'none';
+        vendorBankDetailsDiv.style.display = 'block';
+        clearInvoiceOwnBankAccount();
+    } else {
+        bankAccountDetailsDiv.style.display = 'none';
+        vendorBankDetailsDiv.style.display = 'none';
+        clearInvoiceOwnBankAccount();
+        clearInvoiceVendorBankDetails();
+    }
+}
+
+// Load own bank account (sub user's bank account) for invoices
+function loadInvoiceOwnBankAccount() {
+    const bankSelect = document.getElementById('invoiceBankAccount');
+    
+    fetch('/api/sub-user/bank-account')
+    .then(response => response.json())
+    .then(data => {
+        bankSelect.innerHTML = '<option value="">Choose a bank account...</option>';
+        
+        if (data.success && data.bank_account) {
+            const account = data.bank_account;
+            const option = document.createElement('option');
+            option.value = 'own_account';
+            option.textContent = `${account.bank_name} - ${account.account_number}`;
+            bankSelect.appendChild(option);
+        } else {
+            bankSelect.innerHTML = '<option value="">No bank account found. Please add one in Settings.</option>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading own bank account:', error);
+        bankSelect.innerHTML = '<option value="">Error loading bank account</option>';
+    });
+}
+
+// Clear own bank account selection (for invoices)
+function clearInvoiceOwnBankAccount() {
+    document.getElementById('invoiceBankAccount').innerHTML = '<option value="">Choose a bank account...</option>';
+}
+
+// Clear vendor bank details (for invoices)
+function clearInvoiceVendorBankDetails() {
+    document.getElementById('invoiceVendorBankName').value = '';
+    document.getElementById('invoiceVendorAccountNumber').value = '';
+    document.getElementById('invoiceVendorIfscCode').value = '';
+    document.getElementById('invoiceVendorAccountHolderName').value = '';
+    document.getElementById('invoiceVendorUpiId').value = '';
+    document.getElementById('invoiceVendorPhoneNumber').value = '';
+}
+
+// Calculate GST based on billing state
+function calculateGSTBasedOnState() {
+    const billingState = document.getElementById('billingState').value;
+    
+    // For sub-users, we'll keep the simple 18% IGST calculation
+    // This matches the existing logic in the calculateTotals() function
+    if (billingState) {
+        // State selected, trigger totals recalculation
+        calculateTotals();
+    }
+}
+
+// Notification function
+function showNotification(message, type) {
+    // Create notification container if it doesn't exist
+    let notificationContainer = document.querySelector('.notification-container');
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.className = 'notification-container';
+        document.body.appendChild(notificationContainer);
+    }
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show notification-toast`;
+    alertDiv.setAttribute('role', 'alert');
+    
+    // Add icon based on type
+    let icon = '';
+    switch(type) {
+        case 'success':
+            icon = '<i class="fas fa-check-circle me-2"></i>';
+            break;
+        case 'error':
+            icon = '<i class="fas fa-exclamation-circle me-2"></i>';
+            break;
+        case 'warning':
+            icon = '<i class="fas fa-exclamation-triangle me-2"></i>';
+            break;
+        case 'info':
+            icon = '<i class="fas fa-info-circle me-2"></i>';
+            break;
+    }
+    
+    alertDiv.innerHTML = `
+        ${icon}${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Add to notification container
+    notificationContainer.appendChild(alertDiv);
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.classList.remove('show');
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 300);
+        }
+    }, 4000);
+}
+</script>
+{% endblock %}
+

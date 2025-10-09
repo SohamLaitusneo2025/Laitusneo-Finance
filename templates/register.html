@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Expense Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <style>
+        /* Enhanced Register Page Styles */
+        .auth-body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 10px;
+        }
+        
+        .auth-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 18px;
+        }
+        
+        .auth-logo-img {
+            height: 38px;
+            margin-bottom: 12px;
+        }
+        
+        .auth-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .auth-subtitle {
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 14px;
+        }
+        
+        .form-label {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group-text {
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-right: none;
+            color: #6b7280;
+            padding: 10px 12px;
+            border-radius: 6px 0 0 6px;
+            font-size: 13px;
+        }
+        
+        .form-control {
+            border: 1px solid #d1d5db;
+            border-left: none;
+            padding: 10px 12px;
+            font-size: 13px;
+            border-radius: 0 6px 6px 0;
+            transition: all 0.2s ease;
+            background-color: #ffffff;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+        
+        .btn-outline-secondary {
+            border: 1px solid #d1d5db;
+            border-left: none;
+            padding: 10px 12px;
+            border-radius: 0 6px 6px 0;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        
+        .form-check {
+            margin-bottom: 14px;
+        }
+        
+        .form-check-input {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+        }
+        
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+        
+        .form-check-label {
+            color: #374151;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .form-text {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        .btn-auth {
+            width: 100%;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            transition: all 0.2s ease;
+            text-transform: none;
+            letter-spacing: 0.3px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+        }
+        
+        .auth-footer {
+            margin-top: 16px;
+            text-align: center;
+        }
+        
+        .auth-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+            font-size: 12px;
+        }
+        
+        .auth-link:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+        
+        .alert {
+            border-radius: 6px;
+            border: none;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            font-size: 12px;
+        }
+        
+        .alert-danger {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+        
+        .alert-success {
+            background-color: #c6f6d5;
+            color: #2f855a;
+        }
+        
+        .alert-info {
+            background-color: #bee3f8;
+            color: #2b6cb0;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 576px) {
+            .auth-container {
+                padding: 8px;
+            }
+            
+            .auth-card {
+                padding: 20px 16px;
+            }
+            
+            .auth-title {
+                font-size: 18px;
+            }
+            
+            .auth-logo-img {
+                height: 32px;
+            }
+            
+            .form-control {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+            
+            .input-group-text {
+                padding: 8px 10px;
+            }
+            
+            .btn-auth {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            .row .col-md-6 {
+                margin-bottom: 0;
+            }
+        }
+        
+        /* Animation for form switching */
+        .auth-form {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <img src="{{ url_for('static', filename='laitusneo.svg') }}" alt="Laitusneo Logo" class="auth-logo-img">
+                    <h2 class="auth-title">Create Account</h2>
+                    <p class="auth-subtitle">Join Expense Tracker to manage your finances</p>
+                </div>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-at"></i></span>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-text">Password must be at least 8 characters long</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                    <label class="form-check-label" for="terms">
+                        I agree to the <a href="#" class="auth-link">Terms of Service</a> and <a href="#" class="auth-link">Privacy Policy</a>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-auth">
+                    <i class="fas fa-user-plus me-2"></i>Create Account
+                </button>
+            </form>
+            
+            <div class="auth-footer">
+                <p class="text-center mb-0">
+                    Already have an account? 
+                    <a href="{{ url_for('login') }}" class="auth-link">Sign in here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle password visibility
+        function togglePasswordVisibility(inputId, buttonId) {
+            document.getElementById(buttonId).addEventListener('click', function() {
+                const password = document.getElementById(inputId);
+                const icon = this.querySelector('i');
+                
+                if (password.type === 'password') {
+                    password.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    password.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        }
+        
+        togglePasswordVisibility('password', 'togglePassword');
+        togglePasswordVisibility('confirm_password', 'toggleConfirmPassword');
+        
+        // Password confirmation validation
+        document.getElementById('confirm_password').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+            
+            if (password !== confirmPassword) {
+                this.setCustomValidity('Passwords do not match');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    </script>
+</body>
+</html>

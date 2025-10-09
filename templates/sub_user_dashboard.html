@@ -1,0 +1,348 @@
+{% extends "sub_user_base.html" %}
+<!-- Template updated: 2025-01-27 - Matching Main User Dashboard Design -->
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="professional-dashboard">
+
+    <!-- Refresh Button Section -->
+    <div class="refresh-section">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="welcome-greeting">
+                    <i class="fas fa-hand-wave me-2"></i>Hi&nbsp;<span id="subUserName">{{ sub_user_name or 'Sub User' }} (Sub User)</span>!
+                </div>
+                <button id="refreshBtn" class="btn btn-primary refresh-btn">
+                    <i class="fas fa-sync-alt me-2"></i><span>Refresh Data</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="metrics-section">
+        <div class="container-fluid">
+            <div class="row g-4" id="statsCards">
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card success">
+                        <div class="metric-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="netCredit">₹0.00</h3>
+                            <p class="metric-label">Net Credit</p>
+                            <small class="metric-description">Total money received</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="netDebit">₹0.00</h3>
+                            <p class="metric-label">Net Debit</p>
+                            <small class="metric-description">Total money spent</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card info">
+                        <div class="metric-icon">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="invoiceInAmount">₹0.00</h3>
+                            <p class="metric-label">Invoice IN</p>
+                            <small class="metric-description">Money received from invoices</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value" id="invoiceOutAmount">₹0.00</h3>
+                            <p class="metric-label">Invoice OUT</p>
+                            <small class="metric-description">Money paid for invoices</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section (Restored) -->
+    <div class="charts-section">
+        <div class="container-fluid">
+            <div class="row g-4">
+                <div class="col-xl-8">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5 class="chart-title">
+                                <i class="fas fa-chart-line me-2"></i>Financial Overview
+                            </h5>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="financialChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-4">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5 class="chart-title">
+                                <i class="fas fa-chart-pie me-2"></i>Expense Categories
+                            </h5>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="categoryChart" width="400" height="400"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    
+
+
+</div>
+
+<script>
+let financialChart = null;
+let categoryChart = null;
+
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/sub-user/dashboard-data');
+        const stats = await response.json();
+        
+        if (!stats.success) {
+            throw new Error(stats.message || 'Failed to load dashboard data');
+        }
+        
+        // Helper function to safely format currency
+        const formatCurrency = (amount) => {
+            return `₹${parseFloat(amount || 0).toFixed(2)}`;
+        };
+        
+        // Update statistics cards
+        const netCreditElement = document.getElementById('netCredit');
+        const netDebitElement = document.getElementById('netDebit');
+        const invoiceInAmountElement = document.getElementById('invoiceInAmount');
+        const invoiceOutAmountElement = document.getElementById('invoiceOutAmount');
+        
+        // Update Net Credit (total money received)
+        if (netCreditElement) netCreditElement.textContent = formatCurrency(stats.net_credit || 0);
+        
+        // Update Net Debit (total money spent)
+        if (netDebitElement) netDebitElement.textContent = formatCurrency(stats.net_debit || 0);
+        
+        // Update Invoice IN (money received from invoices)
+        if (invoiceInAmountElement) invoiceInAmountElement.textContent = formatCurrency(stats.in_invoice_amount || 0);
+        
+        // Update Invoice OUT (money paid for invoices)
+        if (invoiceOutAmountElement) invoiceOutAmountElement.textContent = formatCurrency(stats.out_invoice_amount || 0);
+        
+        // Update charts
+        updateCharts(stats);
+        
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+        // Show user-friendly error message instead of crashing
+        showNotification('Unable to load dashboard data. Please refresh the page.', 'error');
+        throw error;
+    }
+}
+
+// Utility functions
+function updateCharts(stats) {
+    // Financial Overview Chart
+    const ctx1 = document.getElementById('financialChart').getContext('2d');
+    if (financialChart) financialChart.destroy();
+    financialChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: ['Net Credit', 'Net Debit', 'Invoice IN', 'Invoice OUT'],
+            datasets: [{
+                label: 'Amount (₹)',
+                data: [
+                    parseFloat(stats.net_credit || 0),
+                    parseFloat(stats.net_debit || 0),
+                    parseFloat(stats.in_invoice_amount || 0),
+                    parseFloat(stats.out_invoice_amount || 0)
+                ],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(23, 162, 184, 0.8)',
+                    'rgba(220, 53, 69, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(23, 162, 184, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Category Chart (placeholder proportions)
+    const ctx2 = document.getElementById('categoryChart').getContext('2d');
+    if (categoryChart) categoryChart.destroy();
+    categoryChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: ['Office', 'Travel', 'Food', 'Utilities', 'Other'],
+            datasets: [{
+                data: [30, 20, 25, 15, 10],
+                backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#FF9F40','#9966FF']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+}
+
+function refreshDashboard() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    const originalContent = refreshBtn.innerHTML;
+    
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
+    refreshBtn.disabled = true;
+    
+    loadDashboardStats().finally(() => {
+        refreshBtn.innerHTML = originalContent;
+        refreshBtn.disabled = false;
+    });
+}
+
+function updateCharts(stats) {
+    // Financial Overview Chart
+    const ctx1 = document.getElementById('financialChart').getContext('2d');
+    
+    if (financialChart) {
+        financialChart.destroy();
+    }
+    
+    financialChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: ['Net Credit', 'Net Debit', 'Invoice IN', 'Invoice OUT', 'Pending OUT'],
+            datasets: [{
+                label: 'Amount (₹)',
+                data: [
+                    parseFloat(stats.net_credit || 0),
+                    parseFloat(stats.net_debit || 0),
+                    parseFloat(stats.in_invoice_amount || 0),
+                    parseFloat(stats.out_invoice_amount || 0),
+                    parseFloat(stats.pending_out_invoice_amount || 0)
+                ],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(23, 162, 184, 0.8)',
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(23, 162, 184, 1)',
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(255, 193, 7, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Category Chart (Simple pie chart with mock data)
+    const ctx2 = document.getElementById('categoryChart').getContext('2d');
+    
+    if (categoryChart) {
+        categoryChart.destroy();
+    }
+    
+    categoryChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: ['Office', 'Travel', 'Food', 'Utilities', 'Other'],
+            datasets: [{
+                data: [30, 20, 25, 15, 10],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#FF9F40',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Load dashboard on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load dashboard stats first
+    loadDashboardStats().catch(error => {
+        console.error('Error loading dashboard:', error);
+    });
+    
+    // Setup refresh button functionality
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            refreshDashboard();
+        });
+    }
+});
+ 
+</script>
+
+{% endblock %}
