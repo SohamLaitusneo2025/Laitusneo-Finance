@@ -1,0 +1,1163 @@
+{% extends "base.html" %}
+
+{% block title %}Fixed Expenses{% endblock %}
+
+{% block content %}
+<div class="professional-dashboard">
+    <!-- Header Section -->
+    <div class="refresh-section">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="welcome-greeting">
+                    <i class="fas fa-calendar-alt me-2"></i>Fixed Expenses Tracker
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="btn-group" role="group" aria-label="Period Toggle">
+                        <input type="radio" class="btn-check" name="periodToggle" id="monthToggle" value="month" checked>
+                        <label class="btn btn-outline-primary" for="monthToggle">
+                            <i class="fas fa-calendar-day me-1"></i> Monthly
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="periodToggle" id="yearToggle" value="year">
+                        <label class="btn btn-outline-primary" for="yearToggle">
+                            <i class="fas fa-calendar me-1"></i> Yearly
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expenses List -->
+    <div class="main-content-section">
+        <div class="container-fluid">
+            <div class="row g-4">
+                <!-- Monthly Expenses Section -->
+                <div class="col-12" id="monthlySection">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="d-flex justify-content-between align-items-center w-100">
+                                <h5 class="chart-title mb-0">
+                                    <i class="fas fa-calendar-day me-2"></i>Monthly Fixed Expenses
+                                </h5>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="text-end">
+                                        <span class="text-muted" style="font-size: 0.875rem;">Total: </span>
+                                        <strong class="text-primary" style="font-size: 1.25rem;" id="monthlyTotal">৳0.00</strong>
+                                    </div>
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMonthlyExpenseModal">
+                                        <i class="fas fa-plus-circle me-2"></i>Add Monthly Expense
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <div id="monthlyExpensesContainer">
+                                <div class="text-center py-4">
+                                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                                    <p class="mt-3 text-muted">Loading monthly expenses...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yearly Expenses Section -->
+                <div class="col-12" id="yearlySection" style="display: none;">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="d-flex justify-content-between align-items-center w-100">
+                                <h5 class="chart-title mb-0">
+                                    <i class="fas fa-calendar me-2"></i>Yearly Fixed Expenses
+                                </h5>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="text-end">
+                                        <span class="text-muted" style="font-size: 0.875rem;">Total: </span>
+                                        <strong class="text-success" style="font-size: 1.25rem;" id="yearlyTotal">৳0.00</strong>
+                                    </div>
+                                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addYearlyExpenseModal">
+                                        <i class="fas fa-plus-circle me-2"></i>Add Yearly Expense
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <div id="yearlyExpensesContainer">
+                                <div class="text-center py-4">
+                                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                                    <p class="mt-3 text-muted">Loading yearly expenses...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Monthly Expense Modal -->
+<div class="modal fade" id="addMonthlyExpenseModal" tabindex="-1" aria-labelledby="addMonthlyExpenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addMonthlyExpenseModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>Add Monthly Fixed Expense
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMonthlyExpenseForm">
+                    <div class="mb-3">
+                        <label class="form-label">Expense Type *</label>
+                        <select class="form-select" id="monthlyExpenseType" required>
+                            <option value="">Select Type</option>
+                            <option value="Fixed">Fixed</option>
+                            <option value="Expected">Expected</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Expense Name *</label>
+                        <input type="text" class="form-control" id="monthlyExpenseName" required placeholder="e.g., Office Rent">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount (৳) *</label>
+                        <input type="number" class="form-control" id="monthlyAmount" step="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Day *</label>
+                        <select class="form-select" id="monthlyPaymentDay" required>
+                            <option value="">Select Day (1-31)</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                            <option value="26">26</option>
+                            <option value="27">27</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="30">30</option>
+                            <option value="31">31</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="monthlyDescription" rows="3" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="submit" form="addMonthlyExpenseForm" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Add Expense
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Yearly Expense Modal -->
+<div class="modal fade" id="addYearlyExpenseModal" tabindex="-1" aria-labelledby="addYearlyExpenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="addYearlyExpenseModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>Add Yearly Fixed Expense
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addYearlyExpenseForm">
+                    <div class="mb-3">
+                        <label class="form-label">Expense Type *</label>
+                        <select class="form-select" id="yearlyExpenseType" required>
+                            <option value="">Select Type</option>
+                            <option value="Fixed">Fixed</option>
+                            <option value="Expected">Expected</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Expense Name *</label>
+                        <input type="text" class="form-control" id="yearlyExpenseName" required placeholder="e.g., Annual License">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount (৳) *</label>
+                        <input type="number" class="form-control" id="yearlyAmount" step="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Month *</label>
+                        <select class="form-select" id="yearlyMonth" required>
+                            <option value="">Select Month</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Day *</label>
+                        <select class="form-select" id="yearlyPaymentDay" required>
+                            <option value="">Select Day (1-31)</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                            <option value="26">26</option>
+                            <option value="27">27</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="30">30</option>
+                            <option value="31">31</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="yearlyDescription" rows="3" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="submit" form="addYearlyExpenseForm" class="btn btn-success">
+                    <i class="fas fa-plus-circle me-2"></i>Add Expense
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Are you sure you want to delete this fixed expense?</p>
+                <p class="text-muted small mb-0 mt-2">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Expense Modal -->
+<div class="modal fade" id="editExpenseModal" tabindex="-1" aria-labelledby="editExpenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editExpenseModalLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Fixed Expense
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editExpenseForm">
+                    <input type="hidden" id="editExpenseId">
+                    <div class="mb-3">
+                        <label class="form-label">Expense Type *</label>
+                        <select class="form-select" id="editExpenseType" required>
+                            <option value="">Select Type</option>
+                            <option value="Fixed">Fixed</option>
+                            <option value="Expected">Expected</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Expense Name *</label>
+                        <input type="text" class="form-control" id="editExpenseName" required placeholder="e.g., Office Rent">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount (৳) *</label>
+                        <input type="number" class="form-control" id="editAmount" step="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="mb-3" id="editMonthFieldContainer" style="display: none;">
+                        <label class="form-label">Month (Optional - Leave empty for yearly expense)</label>
+                        <select class="form-select" id="editMonth">
+                            <option value="">No specific month (Yearly)</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Day *</label>
+                        <select class="form-select" id="editPaymentDay" required>
+                            <option value="">Select Day (1-31)</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                            <option value="26">26</option>
+                            <option value="27">27</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="30">30</option>
+                            <option value="31">31</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="editDescription" rows="3" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="submit" form="editExpenseForm" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Update Expense
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #495057;
+}
+
+.form-control, .form-select {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.25rem;
+}
+
+.table {
+    font-size: 0.8125rem;
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    background-color: #f8f9fa;
+    color: #495057;
+    padding: 0.625rem 0.75rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 0.5rem 0.75rem;
+    color: #212529;
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    border-radius: 0.25rem;
+}
+
+.btn-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.chart-card {
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+}
+
+.chart-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e9ecef;
+    background: linear-gradient(to right, #f8f9fa, #ffffff);
+}
+
+.chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.chart-body {
+    padding: 0;
+}
+
+.welcome-greeting {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.no-data {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #6c757d;
+}
+
+.no-data i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.3;
+}
+
+.no-data h6 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin-bottom: 0.375rem;
+}
+
+.no-data p {
+    font-size: 0.8125rem;
+}
+
+.modal-header {
+    padding: 0.875rem 1.125rem;
+}
+
+.modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.125rem;
+}
+
+.modal-footer {
+    padding: 0.75rem 1.125rem;
+}
+
+.btn-group .btn {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.875rem;
+}
+
+.table-responsive {
+    border-radius: 0 0 0.5rem 0.5rem;
+    overflow: hidden;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.text-primary {
+    color: #0d6efd !important;
+}
+
+.text-success {
+    color: #198754 !important;
+}
+
+.refresh-section {
+    background: #ffffff;
+    padding: 1.125rem 0;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 1.25rem;
+}
+
+.main-content-section {
+    padding: 0 0 1.5rem 0;
+}
+
+@media (max-width: 768px) {
+    .table thead {
+        display: none;
+    }
+    
+    .table tbody tr {
+        display: block;
+        margin-bottom: 0.875rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 0.75rem;
+        background: #fff;
+    }
+    
+    .table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.375rem 0;
+        border: none;
+    }
+    
+    .table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        margin-right: 0.75rem;
+        color: #6c757d;
+        font-size: 0.75rem;
+    }
+    
+    .welcome-greeting {
+        font-size: 1rem;
+    }
+    
+    .chart-title {
+        font-size: 0.9375rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.6875rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* Action buttons styling */
+.btn-primary.btn-sm {
+    background: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary.btn-sm:hover {
+    background: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.btn-success.btn-sm {
+    background: #198754;
+    border-color: #198754;
+}
+
+.btn-success.btn-sm:hover {
+    background: #157347;
+    border-color: #146c43;
+}
+
+.btn-danger.btn-sm {
+    background: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger.btn-sm:hover {
+    background: #bb2d3b;
+    border-color: #b02a37;
+}
+
+/* Compact spacing */
+.mb-3 {
+    margin-bottom: 0.75rem !important;
+}
+
+.gap-3 {
+    gap: 0.75rem !important;
+}
+</style>
+
+<script>
+// Global state
+let allExpenses = []; // Store all expenses globally
+
+// Month names mapping
+const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 
+                   'July', 'August', 'September', 'October', 'November', 'December'];
+
+// Format currency
+function formatCurrency(amount) {
+    return '৳' + parseFloat(amount).toFixed(2);
+}
+
+// Load expenses
+async function loadExpenses() {
+    try {
+        const response = await fetch('/api/monthly-expenses');
+        const data = await response.json();
+        
+        if (data.success) {
+            // Store all expenses globally for edit function
+            allExpenses = data.expenses;
+            
+            const currentMonth = new Date().getMonth() + 1;
+            const currentYear = new Date().getFullYear();
+            
+            // Filter expenses:
+            // Monthly: Expenses with current month and current year
+            // Yearly: Expenses with different month/year OR null month (true yearly expenses)
+            const monthlyExpenses = data.expenses.filter(exp => 
+                exp.month == currentMonth && exp.year == currentYear
+            );
+            const yearlyExpenses = data.expenses.filter(exp => 
+                !(exp.month == currentMonth && exp.year == currentYear)
+            );
+            
+            displayMonthlyExpenses(monthlyExpenses);
+            displayYearlyExpenses(yearlyExpenses);
+            updateTotals(monthlyExpenses, yearlyExpenses);
+        } else {
+            showError('Failed to load expenses');
+        }
+    } catch (error) {
+        console.error('Error loading expenses:', error);
+        showError('Error loading expenses');
+    }
+}
+
+// Display monthly expenses
+function displayMonthlyExpenses(expenses) {
+    const container = document.getElementById('monthlyExpensesContainer');
+    
+    if (expenses.length === 0) {
+        container.innerHTML = `
+            <div class="no-data">
+                <i class="fas fa-calendar-day"></i>
+                <h6>No Monthly Expenses</h6>
+                <p class="text-muted">Click "Add Monthly Expense" to create your first entry</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Build single table with all expenses
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">TYPE</th>
+                        <th style="width: 28%;">EXPENSE NAME</th>
+                        <th style="width: 15%;">AMOUNT</th>
+                        <th style="width: 10%;">DAY</th>
+                        <th style="width: 25%;">DESCRIPTION</th>
+                        <th style="width: 10%;" class="text-center">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    // Sort expenses by date
+    expenses.sort((a, b) => {
+        if (b.year !== a.year) return b.year - a.year;
+        if (b.month !== a.month) return b.month - a.month;
+        return 0;
+    });
+    
+    expenses.forEach(expense => {
+        html += `
+            <tr>
+                <td data-label="Type">
+                    <span class="badge ${expense.expense_type === 'Fixed' ? 'bg-primary' : 'bg-warning text-dark'}">${expense.expense_type || 'Fixed'}</span>
+                </td>
+                <td data-label="Expense Name">
+                    <strong>${expense.expense_name}</strong>
+                </td>
+                <td data-label="Amount">
+                    <strong class="text-primary">${formatCurrency(expense.amount)}</strong>
+                </td>
+                <td data-label="Day">${expense.payment_day || '-'}</td>
+                <td data-label="Description">
+                    <span class="text-muted">${expense.description || '-'}</span>
+                </td>
+                <td data-label="Actions" class="text-center">
+                    <button class="btn btn-outline-primary btn-sm me-1" onclick="editExpense(${expense.id})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteExpense(${expense.id})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// Display yearly expenses
+function displayYearlyExpenses(expenses) {
+    const container = document.getElementById('yearlyExpensesContainer');
+    
+    if (expenses.length === 0) {
+        container.innerHTML = `
+            <div class="no-data">
+                <i class="fas fa-calendar"></i>
+                <h6>No Yearly Expenses</h6>
+                <p class="text-muted">Click "Add Yearly Expense" to create your first entry</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Build single table with all expenses
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">TYPE</th>
+                        <th style="width: 25%;">EXPENSE NAME</th>
+                        <th style="width: 13%;">AMOUNT</th>
+                        <th style="width: 12%;">MONTH</th>
+                        <th style="width: 8%;">DAY</th>
+                        <th style="width: 22%;">DESCRIPTION</th>
+                        <th style="width: 10%;" class="text-center">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    // Sort expenses by year, month, day (newest first)
+    expenses.sort((a, b) => {
+        if (b.year !== a.year) return b.year - a.year;
+        const aMonth = a.month || 0;
+        const bMonth = b.month || 0;
+        if (bMonth !== aMonth) return bMonth - aMonth;
+        const aDay = a.payment_day || 0;
+        const bDay = b.payment_day || 0;
+        return bDay - aDay;
+    });
+    
+    expenses.forEach(expense => {
+        const monthDisplay = expense.month ? monthNames[expense.month] : '-';
+        html += `
+            <tr>
+                <td data-label="Type">
+                    <span class="badge ${expense.expense_type === 'Fixed' ? 'bg-success' : 'bg-warning text-dark'}">${expense.expense_type || 'Fixed'}</span>
+                </td>
+                <td data-label="Expense Name">
+                    <strong>${expense.expense_name}</strong>
+                </td>
+                <td data-label="Amount">
+                    <strong class="text-success">${formatCurrency(expense.amount)}</strong>
+                </td>
+                <td data-label="Month">
+                    <span class="badge bg-light text-dark">${monthDisplay}</span>
+                </td>
+                <td data-label="Day">${expense.payment_day || '-'}</td>
+                <td data-label="Description">
+                    <span class="text-muted">${expense.description || '-'}</span>
+                </td>
+                <td data-label="Actions" class="text-center">
+                    <button class="btn btn-outline-primary btn-sm me-1" onclick="editExpense(${expense.id})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteExpense(${expense.id})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// Update totals
+function updateTotals(monthlyExpenses, yearlyExpenses) {
+    let monthlyTotal = 0;
+    let yearlyTotal = 0;
+    
+    monthlyExpenses.forEach(exp => {
+        monthlyTotal += parseFloat(exp.amount);
+    });
+    
+    yearlyExpenses.forEach(exp => {
+        yearlyTotal += parseFloat(exp.amount);
+    });
+    
+    document.getElementById('monthlyTotal').textContent = formatCurrency(monthlyTotal);
+    document.getElementById('yearlyTotal').textContent = formatCurrency(yearlyTotal);
+}
+
+// Add monthly expense
+document.getElementById('addMonthlyExpenseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const now = new Date();
+    formData.append('expense_type', document.getElementById('monthlyExpenseType').value);
+    formData.append('expense_name', document.getElementById('monthlyExpenseName').value);
+    formData.append('amount', document.getElementById('monthlyAmount').value);
+    formData.append('month', now.getMonth() + 1); // Current month
+    formData.append('payment_day', document.getElementById('monthlyPaymentDay').value);
+    formData.append('year', now.getFullYear());
+    formData.append('description', document.getElementById('monthlyDescription').value);
+    
+    try {
+        const response = await fetch('/monthly-expenses', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess('Monthly expense added successfully');
+            document.getElementById('addMonthlyExpenseForm').reset();
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addMonthlyExpenseModal'));
+            modal.hide();
+            
+            loadExpenses();
+        } else {
+            showError(data.message || 'Failed to add expense');
+        }
+    } catch (error) {
+        console.error('Error adding expense:', error);
+        showError('Error adding expense');
+    }
+});
+
+// Add yearly expense
+document.getElementById('addYearlyExpenseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const now = new Date();
+    formData.append('expense_type', document.getElementById('yearlyExpenseType').value);
+    formData.append('expense_name', document.getElementById('yearlyExpenseName').value);
+    formData.append('amount', document.getElementById('yearlyAmount').value);
+    formData.append('month', document.getElementById('yearlyMonth').value || ''); // Get month from form
+    formData.append('payment_day', document.getElementById('yearlyPaymentDay').value);
+    formData.append('year', now.getFullYear());
+    formData.append('description', document.getElementById('yearlyDescription').value);
+    
+    try {
+        const response = await fetch('/monthly-expenses', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess('Yearly expense added successfully');
+            document.getElementById('addYearlyExpenseForm').reset();
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addYearlyExpenseModal'));
+            modal.hide();
+            
+            loadExpenses();
+        } else {
+            showError(data.message || 'Failed to add expense');
+        }
+    } catch (error) {
+        console.error('Error adding expense:', error);
+        showError('Error adding expense');
+    }
+});
+
+// Edit expense
+document.getElementById('editExpenseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const expenseId = document.getElementById('editExpenseId').value;
+    const expense = allExpenses.find(exp => exp.id == expenseId);
+    
+    // Get month value - use edited value if visible, otherwise keep original
+    let monthValue;
+    if (document.getElementById('editMonthFieldContainer').style.display === 'none') {
+        // Monthly expense - keep original month
+        monthValue = expense ? expense.month : new Date().getMonth() + 1;
+    } else {
+        // Yearly expense - use selected month or empty
+        monthValue = document.getElementById('editMonth').value || '';
+    }
+    
+    const data = {
+        expense_type: document.getElementById('editExpenseType').value,
+        expense_name: document.getElementById('editExpenseName').value,
+        amount: document.getElementById('editAmount').value,
+        month: monthValue,
+        payment_day: document.getElementById('editPaymentDay').value,
+        year: expense ? expense.year : new Date().getFullYear(),
+        description: document.getElementById('editDescription').value
+    };
+    
+    try {
+        const response = await fetch(`/api/monthly-expenses/${expenseId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSuccess('Fixed expense updated successfully');
+            document.getElementById('editExpenseForm').reset();
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editExpenseModal'));
+            modal.hide();
+            
+            loadExpenses();
+        } else {
+            showError(result.message || 'Failed to update expense');
+        }
+    } catch (error) {
+        console.error('Error updating expense:', error);
+        showError('Error updating expense');
+    }
+});
+
+// Edit expense - show modal and populate form
+function editExpense(id) {
+    // Find the expense in the global array
+    const expense = allExpenses.find(exp => exp.id === id);
+    if (!expense) {
+        showError('Expense not found');
+        return;
+    }
+    
+    // Populate the edit form
+    document.getElementById('editExpenseId').value = expense.id;
+    document.getElementById('editExpenseType').value = expense.expense_type || 'Fixed';
+    document.getElementById('editExpenseName').value = expense.expense_name;
+    document.getElementById('editAmount').value = expense.amount;
+    document.getElementById('editMonth').value = expense.month || '';
+    document.getElementById('editPaymentDay').value = expense.payment_day || '';
+    document.getElementById('editDescription').value = expense.description || '';
+    
+    // Show/hide month field based on whether it's a yearly expense
+    const editMonthFieldContainer = document.getElementById('editMonthFieldContainer');
+    
+    if (expense.month && expense.month !== null && expense.month !== '') {
+        // Monthly expense - hide month field
+        editMonthFieldContainer.style.display = 'none';
+    } else {
+        // Yearly expense - show month field
+        editMonthFieldContainer.style.display = 'block';
+    }
+    
+    // Show the modal
+    const editModal = new bootstrap.Modal(document.getElementById('editExpenseModal'));
+    editModal.show();
+}
+
+// Delete expense - show modal
+let expenseToDelete = null;
+
+function deleteExpense(id) {
+    expenseToDelete = id;
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+
+// Confirm delete action
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!expenseToDelete) return;
+    
+    const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+    deleteModal.hide();
+    
+    try {
+        const response = await fetch(`/api/monthly-expenses/${expenseToDelete}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess('Fixed expense deleted successfully');
+            loadExpenses();
+        } else {
+            showError(data.message || 'Failed to delete expense');
+        }
+    } catch (error) {
+        console.error('Error deleting expense:', error);
+        showError('Error deleting expense');
+    } finally {
+        expenseToDelete = null;
+    }
+});
+
+// Modern toast notification function
+function showNotification(message, type = 'info', duration = 5000) {
+    const alertClass = `alert-${type === 'error' ? 'danger' : type}`;
+    const icon = getNotificationIcon(type);
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show notification-toast`;
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="${icon} me-3" style="font-size: 1.2rem;"></i>
+            <div class="flex-grow-1">
+                <div class="fw-semibold">${message}</div>
+            </div>
+            <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto remove after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.classList.remove('show');
+                setTimeout(() => alertDiv.remove(), 150);
+            }
+        }, duration);
+    }
+    
+    return alertDiv;
+}
+
+// Get icon for notification type
+function getNotificationIcon(type) {
+    const icons = {
+        success: 'fas fa-check-circle',
+        error: 'fas fa-exclamation-circle',
+        warning: 'fas fa-exclamation-triangle',
+        info: 'fas fa-info-circle'
+    };
+    return icons[type] || icons.info;
+}
+
+// Show success message
+function showSuccess(message) {
+    showNotification(message, 'success');
+}
+
+// Show error message
+function showError(message) {
+    showNotification(message, 'error');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadExpenses();
+    
+    // Add event listeners for toggle buttons
+    document.getElementById('monthToggle').addEventListener('change', function() {
+        if (this.checked) {
+            toggleView('month');
+        }
+    });
+    
+    document.getElementById('yearToggle').addEventListener('change', function() {
+        if (this.checked) {
+            toggleView('year');
+        }
+    });
+});
+
+// Toggle between monthly and yearly views
+function toggleView(view) {
+    const monthlySection = document.getElementById('monthlySection');
+    const yearlySection = document.getElementById('yearlySection');
+    
+    if (view === 'month') {
+        monthlySection.style.display = 'block';
+        yearlySection.style.display = 'none';
+    } else {
+        monthlySection.style.display = 'none';
+        yearlySection.style.display = 'block';
+    }
+}
+</script>
+
+{% endblock %}

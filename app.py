@@ -1026,6 +1026,52 @@ def invoices():
 def sub_users():
     return render_template('sub_users.html', current_user=get_current_user())
 
+@app.route('/monthly-expenses', methods=['GET', 'POST'])
+@login_required
+def monthly_expenses():
+    """Main user monthly expenses page"""
+    if request.method == 'POST':
+        try:
+            connection = get_db_connection()
+            if connection:
+                cursor = connection.cursor()
+                
+                # Get form data
+                expense_type = request.form.get('expense_type', 'Fixed')
+                expense_name = request.form.get('expense_name')
+                amount = request.form.get('amount')
+                month = request.form.get('month')
+                payment_day = request.form.get('payment_day')
+                year = request.form.get('year')
+                description = request.form.get('description', '')
+                
+                # Convert empty month to None for yearly expenses
+                if month == '' or month == 'null':
+                    month = None
+                
+                # Get current user ID
+                current_user = get_current_user()
+                
+                # Insert monthly expense
+                cursor.execute('''
+                    INSERT INTO monthly_expenses (user_id, expense_type, expense_name, amount, month, payment_day, year, description)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (current_user['id'], expense_type, expense_name, amount, month, payment_day, year, description))
+                
+                connection.commit()
+                cursor.close()
+                connection.close()
+                
+                return jsonify({'success': True, 'message': 'Monthly expense added successfully'})
+            else:
+                return jsonify({'success': False, 'message': 'Database connection error'}), 500
+        except Exception as e:
+            print(f"Error adding monthly expense: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    # GET request - display page with expenses
+    return render_template('monthly_expenses.html', current_user=get_current_user())
+
 # File serving route
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -1937,6 +1983,137 @@ def generate_expenses_pdf(expenses):
     
     buffer.seek(0)
     return buffer
+
+# Monthly Expenses API Routes for Main Users
+@app.route('/api/monthly-expenses', methods=['GET'])
+@login_required
+def get_monthly_expenses():
+    """Get all monthly expenses for current user"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        current_user = get_current_user()
+        user_id = current_user['id']
+        
+        # Get all monthly expenses
+        cursor.execute("""
+            SELECT id, expense_type, expense_name, amount, month, payment_day, year, description, created_at
+            FROM monthly_expenses
+            WHERE user_id = %s
+            ORDER BY year DESC, month DESC, created_at DESC
+        """, (user_id,))
+        
+        expenses = cursor.fetchall()
+        
+        # Calculate monthly totals
+        cursor.execute("""
+            SELECT month, year, SUM(amount) as total
+            FROM monthly_expenses
+            WHERE user_id = %s
+            GROUP BY month, year
+            ORDER BY year DESC, month DESC
+        """, (user_id,))
+        
+        monthly_totals = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({
+            'success': True, 
+            'expenses': expenses,
+            'monthly_totals': monthly_totals
+        })
+    except Exception as e:
+        print(f"Get monthly expenses error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/monthly-expenses/<int:expense_id>', methods=['DELETE'])
+@login_required
+def delete_monthly_expense(expense_id):
+    """Delete a monthly expense"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        current_user = get_current_user()
+        user_id = current_user['id']
+        
+        # Delete the expense (only if it belongs to this user)
+        cursor.execute("""
+            DELETE FROM monthly_expenses
+            WHERE id = %s AND user_id = %s
+        """, (expense_id, user_id))
+        
+        connection.commit()
+        
+        if cursor.rowcount == 0:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'message': 'Expense not found or unauthorized'}), 404
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Monthly expense deleted successfully'})
+    except Exception as e:
+        print(f"Delete monthly expense error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/monthly-expenses/<int:expense_id>', methods=['PUT'])
+@login_required
+def update_monthly_expense(expense_id):
+    """Update a monthly expense"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        current_user = get_current_user()
+        user_id = current_user['id']
+        
+        # Get form data
+        data = request.get_json() if request.is_json else request.form
+        expense_type = data.get('expense_type', 'Fixed')
+        expense_name = data.get('expense_name')
+        amount = data.get('amount')
+        month = data.get('month')
+        payment_day = data.get('payment_day')
+        year = data.get('year')
+        description = data.get('description', '')
+        
+        # Convert empty month to None for yearly expenses
+        if month == '' or month == 'null':
+            month = None
+        
+        # Update the expense (only if it belongs to this user)
+        cursor.execute("""
+            UPDATE monthly_expenses
+            SET expense_type = %s, expense_name = %s, amount = %s, month = %s, 
+                payment_day = %s, year = %s, description = %s
+            WHERE id = %s AND user_id = %s
+        """, (expense_type, expense_name, amount, month, payment_day, year, description, expense_id, user_id))
+        
+        connection.commit()
+        
+        if cursor.rowcount == 0:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'message': 'Expense not found or unauthorized'}), 404
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Monthly expense updated successfully'})
+    except Exception as e:
+        print(f"Update monthly expense error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 # Bulk export invoices
 @app.route('/api/invoices/export', methods=['POST'])
