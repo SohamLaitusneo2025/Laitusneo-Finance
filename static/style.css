@@ -1892,21 +1892,6 @@ div.metric-card.info:hover .metric-icon {
     box-shadow: 0 2px 8px rgba(var(--metric-color-rgb, 6, 182, 212), 0.3) !important;
 }
 
-/* ribbon badge for uniqueness */
-.metric-card.net-balance-card::after {
-    content: 'Net';
-    position: absolute;
-    top: 12px;
-    right: -40px;
-    transform: rotate(45deg);
-    background: linear-gradient(135deg, #06b6d4, #22d3ee);
-    color: #fff;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    padding: 6px 50px;
-    box-shadow: 0 6px 16px rgba(6, 182, 212, 0.3);
-}
 
 .metric-card.net-balance-card .metric-icon {
     background: linear-gradient(135deg, var(--metric-color, #06b6d4) 0%, var(--metric-color-light, #22d3ee) 100%) !important;

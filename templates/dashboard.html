@@ -4,6 +4,656 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+<style>
+/* Enhanced Dashboard Styling - Reduced Font Sizes & Polished Design */
+.professional-dashboard {
+    font-size: 0.9rem;
+}
+
+/* Welcome Section */
+.welcome-greeting {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #4b5563;
+}
+
+.refresh-btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Metric Cards - Enhanced & Polished Design */
+.metric-card {
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: #ffffff;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.125rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.03), transparent);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.metric-icon {
+    font-size: 1.625rem;
+    opacity: 1;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    color: #4b5563;
+}
+
+.metric-icon i {
+    color: inherit;
+    font-size: 1.5rem;
+    display: block;
+}
+
+.metric-card.net-balance-card .metric-icon {
+    color: #06b6d4;
+    background: #ffffff;
+}
+
+.metric-card.net-balance-card .metric-icon i {
+    color: #06b6d4 !important;
+}
+
+.metric-card.primary .metric-icon {
+    color: #3b82f6;
+    background: #ffffff;
+}
+
+.metric-card.warning .metric-icon {
+    color: #f59e0b;
+    background: #ffffff;
+}
+
+.metric-card.info .metric-icon {
+    color: #06b6d4;
+    background: #ffffff;
+}
+
+.metric-card.info .metric-icon i {
+    color: #06b6d4 !important;
+}
+
+.metric-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.metric-value {
+    font-size: 1.625rem;
+    font-weight: 700;
+    margin: 0.375rem 0 0.5rem 0;
+    line-height: 1.2;
+    color: #111827;
+    letter-spacing: -0.025em;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.metric-description,
+.metric-count {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+/* Bank Balance Summary */
+.bank-balance-summary {
+    margin: 1.5rem 0;
+}
+
+.balance-summary-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    padding: 1.125rem 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+}
+
+.balance-summary-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.balance-summary-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.75rem;
+}
+
+.balance-summary-item {
+    font-size: 0.8rem;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    transition: all 0.2s ease;
+}
+
+.balance-summary-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.balance-summary-label {
+    font-weight: 600;
+    color: #374151;
+}
+
+.balance-summary-value {
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 0.875rem;
+}
+
+/* Low Stock Alert */
+#lowStockAlertBanner .alert {
+    border-radius: 0.75rem;
+    font-size: 0.85rem;
+    padding: 0.875rem 1.25rem;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+    border-left: 4px solid #ffc107;
+}
+
+
+/* Charts Section - Combined with Recent Expenses */
+.charts-section {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.chart-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.03), transparent);
+}
+
+.chart-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.chart-card .chart-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    background: linear-gradient(to bottom, #fafbfc, #f5f6f7);
+    flex-shrink: 0;
+}
+
+.chart-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
+.chart-body {
+    padding: 1.5rem;
+    flex: 1;
+}
+
+/* Main Content Section */
+.main-content-section {
+    margin-top: 1.5rem;
+}
+
+.overdue-card,
+.detail-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.overdue-card .card-header,
+.detail-card .card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background: #f9fafb;
+}
+
+.overdue-card .card-title,
+.detail-card .card-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0;
+    color: #374151;
+    letter-spacing: 0.01em;
+}
+
+.overdue-card .card-body,
+.detail-card .card-body {
+    padding: 1.25rem 1.5rem;
+}
+
+.overdue-amount {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+}
+
+.overdue-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.overdue-description {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    line-height: 1.4;
+}
+
+.stat-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.01em;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Tables */
+.detail-table {
+    font-size: 0.85rem;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.detail-table thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.875rem 1rem;
+    border-bottom: 2px solid #e5e7eb;
+    background: #fafbfc;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.detail-table tbody td {
+    padding: 0.875rem 1rem;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+}
+
+.detail-table tbody tr:hover td {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.detail-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Recent Expenses - Compact Card */
+.recent-expenses-compact {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.recent-expenses-compact::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.03), transparent);
+}
+
+.recent-expenses-compact:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.recent-expenses-compact .card-header {
+    padding: 0.875rem 1.125rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    background: linear-gradient(to bottom, #fafbfc, #f5f6f7);
+    flex-shrink: 0;
+}
+
+.recent-expenses-compact .card-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin: 0;
+    color: #374151;
+    letter-spacing: 0.01em;
+}
+
+.recent-expenses-compact .card-body {
+    padding: 0.875rem 1.125rem;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.recent-expenses-compact .table-container {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.recent-expenses-compact .activity-table {
+    font-size: 0.75rem;
+    width: 100%;
+}
+
+.recent-expenses-compact .activity-table thead th {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #fafbfc;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.recent-expenses-compact .activity-table tbody td {
+    padding: 0.5rem 0.75rem;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.75rem;
+}
+
+.recent-expenses-compact .activity-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.recent-expenses-compact .empty-state {
+    text-align: center;
+    padding: 1rem;
+}
+
+.recent-expenses-compact .empty-state p {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-bottom: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .metric-value {
+        font-size: 1.5rem;
+    }
+    
+    .metric-label {
+        font-size: 0.8rem;
+    }
+    
+    .balance-summary-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+}
+
+/* Spacing improvements */
+.metrics-section {
+    margin-bottom: 1.25rem;
+}
+
+.main-content-section {
+    margin-top: 1.25rem;
+}
+
+.recent-section {
+    margin-top: 1.25rem;
+}
+
+.container-fluid {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+}
+
+/* Enhanced card alignment */
+.overdue-card,
+.detail-card,
+.activity-card {
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.overdue-card:hover,
+.detail-card:hover,
+.activity-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.overdue-card .card-header,
+.detail-card .card-header,
+.activity-card .card-header {
+    background: linear-gradient(to bottom, #fafbfc, #f5f6f7);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 1rem 1.5rem;
+}
+
+.overdue-card .card-body,
+.detail-card .card-body,
+.activity-card .card-body {
+    padding: 1.25rem 1.5rem;
+}
+
+/* Enhanced Overdue Items */
+.overdue-item {
+    display: flex;
+    align-items: center;
+    gap: 1.125rem;
+    padding: 1.125rem 1.25rem;
+    border-radius: 0.625rem;
+    margin-bottom: 0.875rem;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+}
+
+.overdue-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+    transform: translateX(2px);
+}
+
+.overdue-item:last-of-type {
+    margin-bottom: 1.25rem;
+}
+
+.overdue-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 1.125rem;
+    flex-shrink: 0;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.overdue-item:hover .overdue-icon {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.overdue-stats {
+    display: flex;
+    gap: 0.875rem;
+    margin-top: 0.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    flex: 1;
+    transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.stat-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.stat-item:hover .stat-icon {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+/* Badge styling */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+    font-weight: 500;
+}
+
+/* Button improvements */
+.btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-sm {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+</style>
+
 <div class="professional-dashboard">
 
     <!-- Refresh Button Section -->
@@ -97,40 +747,25 @@
         </div>
     </div>
 
-    <!-- Charts Section -->
-    <div class="charts-section">
-        <div class="container-fluid">
-            <div class="row g-4">
-                <div class="col-xl-8">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h5 class="chart-title">
-                                <i class="fas fa-chart-line me-2"></i>Financial Overview
-                            </h5>
-                        </div>
-                        <div class="chart-body">
-                            <canvas id="financialChart" width="400" height="200"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-4">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h5 class="chart-title">
-                                <i class="fas fa-chart-pie me-2"></i>Expense Categories
-                            </h5>
-                        </div>
-                        <div class="chart-body">
-                            <canvas id="categoryChart" width="400" height="400"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Low Stock Alert Banner -->
+    <div class="container-fluid mb-3" id="lowStockAlertBanner" style="display: none;">
+        <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" style="border-left: 4px solid #ffc107;">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Low Stock Alert!</strong> You have <span id="lowStockCountBanner" class="fw-bold">0</span> product<span id="lowStockPlural">s</span> with low stock.
+            <a href="/inventory" class="alert-link ms-2 fw-bold">View Inventory</a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </div>
 
-
+    <!-- Upcoming Payments Widget -->
+    <div class="container-fluid mb-3" id="upcomingPaymentsWidget" style="display: none;">
+        <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert" style="border-left: 4px solid #3b82f6;">
+            <i class="fas fa-calendar-check me-2"></i>
+            <strong>Upcoming Payments This Week!</strong> You have <span id="upcomingPaymentsCount" class="fw-bold">0</span> payment<span id="upcomingPaymentsPlural">s</span> due in the next 7 days.
+            <a href="/banking" class="alert-link ms-2 fw-bold">View Banking</a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
 
     <!-- Main Content Section -->
     <div class="main-content-section">
@@ -265,33 +900,65 @@
         </div>
     </div>
 
-    <!-- Recent Activity Section -->
-    <div class="recent-section">
+    <!-- Charts and Recent Expenses Section - Combined Layout -->
+    <div class="charts-section">
         <div class="container-fluid">
-            <div class="activity-card">
-                <div class="card-header">
-                    <h5 class="card-title">
-                        <i class="fas fa-history me-2"></i>Recent Expenses
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-container">
-                        <table class="activity-table" id="recentExpensesTable">
-                            <thead>
-                                <tr>
-                                    <th>Purpose</th>
-                                    <th>Amount</th>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
+            <div class="row g-4">
+                <!-- Recent Expenses - Smaller Card -->
+                <div class="col-xl-3">
+                    <div class="activity-card recent-expenses-compact">
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                <i class="fas fa-history me-2"></i>Recent Expenses
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="activity-table" id="recentExpensesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Purpose</th>
+                                            <th>Amount</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="empty-state" id="noRecentExpenses" style="display: none;">
+                                <p class="small">No recent expenses</p>
+                                <a href="{{ url_for('expenses') }}" class="btn btn-primary btn-sm">Add Expense</a>
+                            </div>
+                        </div>
                     </div>
-                    <div class="empty-state" id="noRecentExpenses" style="display: none;">
-                        <p>No recent expenses found.</p>
-                        <a href="{{ url_for('expenses') }}" class="btn btn-primary">Add First Expense</a>
+                </div>
+
+                <!-- Financial Overview Chart -->
+                <div class="col-xl-5">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5 class="chart-title">
+                                <i class="fas fa-chart-line me-2"></i>Financial Overview
+                            </h5>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="financialChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expense Categories Chart -->
+                <div class="col-xl-4">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5 class="chart-title">
+                                <i class="fas fa-chart-pie me-2"></i>Expense Categories
+                            </h5>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="categoryChart" width="400" height="400"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -300,11 +967,45 @@
 </div>
 
 <script>
+// Define showNotification early so it can be used in other functions
+function showNotification(message, type = 'info') {
+    try {
+        const notification = document.createElement('div');
+        const alertType = type === 'error' ? 'danger' : type;
+        notification.className = `alert alert-${alertType} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 3000);
+    } catch (error) {
+        console.error('Error showing notification:', error);
+        // Fallback to console log if notification fails
+        console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+}
+
 let financialChart = null;
 let categoryChart = null;
 
 async function loadDashboardStats() {
     try {
+        // Check if axios is available
+        if (typeof axios === 'undefined') {
+            console.error('Axios is not loaded');
+            showNotification('Error: Axios library not loaded. Please refresh the page.', 'error');
+            return;
+        }
+        
         const response = await axios.get('/api/dashboard/stats');
         const stats = response.data;
         
@@ -366,6 +1067,9 @@ async function loadDashboardStats() {
         // Load bank accounts for the summary line
         loadBankAccountsForSummary();
         
+        // Load low stock notifications
+        loadLowStockNotifications();
+        
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
         // Show user-friendly error message instead of crashing
@@ -397,7 +1101,6 @@ function updateRecentExpensesTable(expenses) {
                     <td>${expense.title || 'Untitled'}</td>
                     <td>${formatCurrency(expense.amount)}</td>
                     <td>${new Date(expense.expense_date).toLocaleDateString()}</td>
-                    <td><span class="badge ${expense.expense_type === 'upcoming' ? 'bg-warning' : 'bg-primary'}">${expense.expense_type || 'completed'}</span></td>
                 </tr>
             `).join('');
             document.querySelector('#recentExpensesTable').style.display = 'table';
@@ -577,14 +1280,29 @@ function updateCharts(stats) {
 
 // Load dashboard on page load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard DOM loaded');
+    
     // Load dashboard stats first
     loadDashboardStats().then(() => {
-        // Bank accounts loaded via loadDashboardStats
+        // Bank accounts and low stock notifications loaded via loadDashboardStats
+        console.log('Dashboard stats loaded successfully');
     }).catch(error => {
         console.error('Error loading dashboard:', error);
         // Still try to load bank accounts for summary
         loadBankAccountsForSummary();
+        // Still try to load low stock notifications
+        loadLowStockNotifications();
+        // Load upcoming payments widget
+        loadUpcomingPaymentsWidget();
     });
+    
+    // Also load low stock notifications directly as a fallback (with a small delay to ensure DOM is ready)
+    setTimeout(() => {
+        console.log('Loading low stock notifications as fallback...');
+        loadLowStockNotifications();
+        // Also load upcoming payments widget
+        loadUpcomingPaymentsWidget();
+    }, 500);
     
     // Setup refresh button functionality
     const refreshBtn = document.getElementById('refreshBtn');
@@ -598,20 +1316,37 @@ document.addEventListener('DOMContentLoaded', function() {
 // Refresh dashboard data function
 function refreshDashboardData() {
     const refreshBtn = document.getElementById('refreshBtn');
+    if (!refreshBtn) {
+        console.error('Refresh button not found');
+        return;
+    }
+    
     const icon = refreshBtn.querySelector('i');
-    const text = refreshBtn.querySelector('span') || refreshBtn;
+    const textSpan = refreshBtn.querySelector('span');
+    const text = textSpan || refreshBtn;
     
     // Add loading state
     refreshBtn.classList.add('loading');
     refreshBtn.disabled = true;
-    text.textContent = 'Refreshing...';
+    if (textSpan) {
+        textSpan.textContent = 'Refreshing...';
+    } else if (text) {
+        text.textContent = 'Refreshing...';
+    }
     
     // Reload dashboard stats
     loadDashboardStats().finally(() => {
         // Remove loading state
         refreshBtn.classList.remove('loading');
         refreshBtn.disabled = false;
-        text.textContent = 'Refresh Data';
+        if (textSpan) {
+            textSpan.textContent = 'Refresh Data';
+        } else if (text) {
+            text.textContent = 'Refresh Data';
+        }
+        
+        // Reload low stock notifications
+        loadLowStockNotifications();
         
         // Show success message
         showNotification('Dashboard data refreshed successfully!', 'success');
@@ -690,24 +1425,101 @@ function updateBankBalanceSummary(banks) {
 
 // Detailed balance functions removed
 
-// Show notification function
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
+// Load low stock notifications
+async function loadLowStockNotifications() {
+    try {
+        console.log('Loading low stock notifications...');
+        const response = await fetch('/api/products/low-stock');
+        
+        if (!response.ok) {
+            console.error('Failed to fetch low stock products:', response.status, response.statusText);
+            return;
         }
-    }, 3000);
+        
+        const data = await response.json();
+        console.log('Low stock API response:', data);
+        
+        const lowStockProducts = data.products || [];
+        const threshold = data.threshold || 5;
+        
+        console.log('Low stock products found:', lowStockProducts.length);
+        console.log('Products:', lowStockProducts);
+        console.log('Threshold:', threshold);
+        
+        // Get DOM elements
+        const bannerCount = document.getElementById('lowStockCountBanner');
+        const banner = document.getElementById('lowStockAlertBanner');
+        const pluralSpan = document.getElementById('lowStockPlural');
+        
+        if (!banner) {
+            console.error('Low stock alert banner element not found!');
+            return;
+        }
+        
+        if (lowStockProducts.length > 0) {
+            // Update banner
+            if (bannerCount) {
+                bannerCount.textContent = lowStockProducts.length;
+            }
+            if (pluralSpan) {
+                pluralSpan.textContent = lowStockProducts.length === 1 ? '' : 's';
+            }
+            
+            // Show banner
+            banner.style.display = 'block';
+            console.log('Low stock banner displayed with', lowStockProducts.length, 'products');
+        } else {
+            // Hide alert if no low stock products
+            banner.style.display = 'none';
+            console.log('No low stock products found - hiding alert');
+        }
+    } catch (error) {
+        console.error('Error loading low stock notifications:', error);
+    }
 }
+
+// Load upcoming payments widget
+async function loadUpcomingPaymentsWidget() {
+    try {
+        const response = await fetch('/api/banking/upcoming-payments?days=7');
+        
+        if (!response.ok) {
+            // If banking API doesn't exist or fails, hide widget
+            const widget = document.getElementById('upcomingPaymentsWidget');
+            if (widget) {
+                widget.style.display = 'none';
+            }
+            return;
+        }
+        
+        const payments = await response.json();
+        const widget = document.getElementById('upcomingPaymentsWidget');
+        const countSpan = document.getElementById('upcomingPaymentsCount');
+        const pluralSpan = document.getElementById('upcomingPaymentsPlural');
+        
+        if (!widget) {
+            return;
+        }
+        
+        if (payments && payments.length > 0) {
+            if (countSpan) {
+                countSpan.textContent = payments.length;
+            }
+            if (pluralSpan) {
+                pluralSpan.textContent = payments.length === 1 ? '' : 's';
+            }
+            widget.style.display = 'block';
+        } else {
+            widget.style.display = 'none';
+        }
+    } catch (error) {
+        // Silently fail if banking system is not set up
+        const widget = document.getElementById('upcomingPaymentsWidget');
+        if (widget) {
+            widget.style.display = 'none';
+        }
+    }
+}
+
 </script>
 {% endblock %}

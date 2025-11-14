@@ -4,51 +4,215 @@
 
 {% block content %}
 <style>
-/* Compact Table Styling - Same look, less spacing */
-#invoicesTable th,
-#invoicesTable td {
-    padding: 6px 8px;
-    font-size: 0.9rem;
+/* Enhanced Invoice Table Styling - Compact & Polished */
+.table-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.table-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.table-card .card-header {
+    background: linear-gradient(to bottom, #fafbfc, #f5f6f7);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 1rem 1.5rem;
+}
+
+.table-card .card-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+    letter-spacing: 0.01em;
+}
+
+.table-card .card-body {
+    padding: 0;
+}
+
+#invoicesTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.8rem;
+    margin: 0;
 }
 
 #invoicesTable thead th {
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
+    background: #fafbfc;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 0.75rem 0.875rem;
+    font-size: 0.7rem;
     font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+#invoicesTable tbody td {
+    padding: 0.75rem 0.875rem;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+    transition: background-color 0.2s ease;
+}
+
+#invoicesTable tbody tr {
+    transition: all 0.2s ease;
 }
 
 #invoicesTable tbody tr:hover {
-    background-color: #f8f9fa;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+#invoicesTable tbody tr:hover td {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+#invoicesTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Checkbox styling */
+#invoicesTable input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    accent-color: #3b82f6;
+}
+
+/* Badge styling */
+#invoicesTable .badge {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 0.375rem;
+}
+
+/* Action buttons */
+#invoicesTable .btn-action {
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #6b7280;
+}
+
+#invoicesTable .btn-action:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #374151;
+    transform: translateY(-1px);
+}
+
+#invoicesTable .btn-action.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #dc2626;
+}
+
+#invoicesTable .btn-action.btn-success:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.2);
+    color: #059669;
+}
+
+/* Link styling */
+#invoicesTable a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+#invoicesTable a:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+/* Amount styling */
+#invoicesTable .amount {
+    font-weight: 600;
+    color: #111827;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: -0.01em;
 }
 
 /* Compact Invoice Form Styling */
 #invoiceModal .form-label {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     margin-bottom: 0.25rem;
     font-weight: 500;
+    color: #374151;
 }
 
 #invoiceModal .form-control,
 #invoiceModal .form-select {
-    padding: 0.375rem 0.5rem;
-    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+#invoiceModal .form-control:focus,
+#invoiceModal .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 #invoiceModal .modal-body {
-    padding: 1rem;
+    padding: 1.25rem;
 }
 
 #invoiceModal .modal-header {
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(to bottom, #fafbfc, #f5f6f7);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 #invoiceModal .modal-footer {
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 #invoiceModal h6 {
-    font-size: 0.95rem;
-    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+/* Summary Cards Enhancement */
+.metrics-section .metric-card {
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+}
+
+.metrics-section .metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* Company fields visibility */
@@ -58,6 +222,18 @@
 
 .company-field-hidden {
     display: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #invoicesTable {
+        font-size: 0.75rem;
+    }
+    
+    #invoicesTable thead th,
+    #invoicesTable tbody td {
+        padding: 0.5rem 0.625rem;
+    }
 }
 </style>
 
@@ -658,6 +834,7 @@
 let invoices = [];
 let filteredInvoices = [];
 let itemCounter = 0;
+let products = [];
 
 // Load invoices on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -675,6 +852,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load invoices data
     loadInvoices();
+    
+    // Load products for inventory selection
+    loadProducts();
     
     // Initialize any dropdowns that might be in the initial HTML
     initializeDropdowns();
@@ -695,8 +875,16 @@ function addItem() {
             </div>
             <div class="row g-3">
                 <div class="col-md-6">
+                    <label class="form-label">Select Product (Optional)</label>
+                    <select class="form-select product-select" data-item-index="${itemIndex}" onchange="selectProduct(${itemIndex}, this.value)">
+                        <option value="">-- Select Product --</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
                     <label class="form-label">Description *</label>
-                    <input type="text" class="form-control" name="items[${itemIndex}][description]" required>
+                    <input type="text" class="form-control" name="items[${itemIndex}][description]" id="itemDescription_${itemIndex}" required>
+                    <input type="hidden" name="items[${itemIndex}][product_id]" id="itemProductId_${itemIndex}">
+                    <input type="hidden" name="items[${itemIndex}][sac_code]" id="itemSacCode_${itemIndex}">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Quantity *</label>
@@ -715,6 +903,9 @@ function addItem() {
     `;
     
     container.insertAdjacentHTML('beforeend', itemHTML);
+    
+    // Populate product dropdown for this item
+    populateProductDropdown(itemIndex);
 }
 
 // Remove invoice item
@@ -957,16 +1148,36 @@ async function editInvoice(id) {
         
         // Add invoice items
         if (invoice.items && invoice.items.length > 0) {
-            invoice.items.forEach(item => {
+            invoice.items.forEach((item, idx) => {
                 addItem();
                 const itemElements = document.querySelectorAll('.invoice-item');
                 const lastItemElement = itemElements[itemElements.length - 1];
+                const itemIndex = itemElements.length - 1;
                 
                 if (lastItemElement) {
                     lastItemElement.querySelector('[name*="[description]"]').value = item.description || '';
                     lastItemElement.querySelector('[name*="[quantity]"]').value = item.quantity || 0;
                     lastItemElement.querySelector('[name*="[unit_price]"]').value = item.unit_price || 0;
                     lastItemElement.querySelector('[name*="[total_price]"]').value = item.total_price || 0;
+                    
+                    // Set product_id and sac_code if available
+                    if (item.product_id) {
+                        const productIdInput = document.getElementById(`itemProductId_${itemIndex}`);
+                        if (productIdInput) {
+                            productIdInput.value = item.product_id;
+                            // Select the product in dropdown
+                            const productSelect = lastItemElement.querySelector('.product-select');
+                            if (productSelect) {
+                                productSelect.value = item.product_id;
+                            }
+                        }
+                    }
+                    if (item.sac_code) {
+                        const sacCodeInput = document.getElementById(`itemSacCode_${itemIndex}`);
+                        if (sacCodeInput) {
+                            sacCodeInput.value = item.sac_code;
+                        }
+                    }
                 }
             });
         } else {
@@ -1047,6 +1258,8 @@ async function saveInvoice() {
             const quantityInput = itemElement.querySelector('[name*="[quantity]"]');
             const unitPriceInput = itemElement.querySelector('[name*="[unit_price]"]');
             const totalPriceInput = itemElement.querySelector('[name*="[total_price]"]');
+            const productIdInput = itemElement.querySelector('[name*="[product_id]"]');
+            const sacCodeInput = itemElement.querySelector('[name*="[sac_code]"]');
             
             if (descriptionInput && quantityInput && unitPriceInput) {
                 const item = {
@@ -1055,6 +1268,16 @@ async function saveInvoice() {
                     unit_price: parseFloat(unitPriceInput.value) || 0,
                     total_price: parseFloat(totalPriceInput.value) || 0
                 };
+                
+                // Add product_id if available
+                if (productIdInput && productIdInput.value) {
+                    item.product_id = parseInt(productIdInput.value);
+                }
+                
+                // Add sac_code if available (from product selection)
+                if (sacCodeInput && sacCodeInput.value) {
+                    item.sac_code = sacCodeInput.value;
+                }
                 
                 if (item.description && item.quantity > 0 && item.unit_price > 0) {
                     items.push(item);
@@ -1138,6 +1361,8 @@ async function saveInvoice() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('invoiceModal'));
             modal.hide();
             await loadInvoices();
+            // Reload products to show updated inventory quantities
+            await loadProducts();
             showNotification(`Invoice ${isEdit ? 'updated' : 'created'} successfully!`, 'success');
         } else {
             showNotification(result.error || `Failed to ${isEdit ? 'update' : 'create'} invoice`, 'error');
@@ -1956,6 +2181,93 @@ function viewInvoice(id) {
     } catch (error) {
         console.error('Error in viewInvoice:', error);
         showNotification('Error loading invoice details: ' + error.message, 'error');
+    }
+}
+
+// Load products for inventory selection
+async function loadProducts() {
+    try {
+        const response = await fetch('/api/products?status=active');
+        if (response.ok) {
+            products = await response.json();
+            // Populate all existing product dropdowns
+            document.querySelectorAll('.product-select').forEach(select => {
+                populateProductDropdown(select.dataset.itemIndex);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading products:', error);
+    }
+}
+
+// Populate product dropdown for a specific item
+function populateProductDropdown(itemIndex) {
+    const select = document.querySelector(`.product-select[data-item-index="${itemIndex}"]`);
+    if (!select) return;
+    
+    // Clear existing options except the first one
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+    
+    // Add products
+    products.forEach(product => {
+        const option = document.createElement('option');
+        option.value = product.id;
+        option.textContent = `${product.product_name} (Qty: ${product.quantity} ${product.unit || 'pcs'}, Price: ₹${product.unit_price})`;
+        option.dataset.quantity = product.quantity;
+        option.dataset.price = product.unit_price;
+        select.appendChild(option);
+    });
+}
+
+// Handle product selection
+function selectProduct(itemIndex, productId) {
+    if (!productId) {
+        // Clear SAC code when product is deselected
+        const sacCodeInput = document.getElementById(`itemSacCode_${itemIndex}`);
+        if (sacCodeInput) {
+            sacCodeInput.value = '';
+        }
+        return;
+    }
+    
+    const product = products.find(p => p.id == productId);
+    if (!product) return;
+    
+    // Update description, price, product_id, and sac_code
+    const descriptionInput = document.getElementById(`itemDescription_${itemIndex}`);
+    const priceInput = document.querySelector(`[data-item-index="${itemIndex}"]`).closest('.invoice-item').querySelector('[name*="[unit_price]"]');
+    const productIdInput = document.getElementById(`itemProductId_${itemIndex}`);
+    const sacCodeInput = document.getElementById(`itemSacCode_${itemIndex}`);
+    
+    if (descriptionInput) {
+        // Use product description if available, otherwise use product name
+        descriptionInput.value = product.description || product.product_name || '';
+    }
+    if (priceInput) {
+        priceInput.value = product.unit_price || 0;
+        calculateItemTotal(priceInput);
+    }
+    if (productIdInput) {
+        productIdInput.value = product.id;
+    }
+    if (sacCodeInput) {
+        // Fetch SAC code from product, use default if not set
+        sacCodeInput.value = product.sac_code || '998313';
+    }
+    
+    // Show available quantity warning if needed
+    const availableQty = parseFloat(product.quantity || 0);
+    if (availableQty <= 5) {
+        showNotification(`Warning: Low stock for ${product.product_name}. Available: ${availableQty} ${product.unit || 'pcs'}`, 'warning');
+    }
+    
+    // Check if quantity input exists and set max value
+    const quantityInput = document.querySelector(`[data-item-index="${itemIndex}"]`).closest('.invoice-item').querySelector('[name*="[quantity]"]');
+    if (quantityInput) {
+        quantityInput.setAttribute('max', availableQty);
+        quantityInput.setAttribute('title', `Maximum available: ${availableQty} ${product.unit || 'pcs'}`);
     }
 }
 

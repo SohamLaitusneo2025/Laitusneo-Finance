@@ -54,6 +54,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link professional-link" href="{{ url_for('inventory') }}">
+                            <i class="fas fa-boxes"></i>
+                            <span class="nav-text">Product Inventory</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link professional-link" href="{{ url_for('sub_users') }}">
                             <i class="fas fa-users"></i>
                             <span class="nav-text">Sub Users</span>
@@ -64,6 +70,20 @@
                             <i class="fas fa-calendar-alt"></i>
                             <span class="nav-text">Fixed Expenses</span>
                         </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle professional-link" href="#" id="bankingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-university"></i>
+                            <span class="nav-text">Banking</span>
+                        </a>
+                        <ul class="dropdown-menu professional-dropdown" aria-labelledby="bankingDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('banking', section='dashboard') }}"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('banking', section='customers') }}"><i class="fas fa-users me-2"></i>Customers</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('banking', section='debts') }}"><i class="fas fa-file-invoice-dollar me-2"></i>Debts</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('banking', section='emis') }}"><i class="fas fa-calendar-check me-2"></i>EMIs</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('banking', section='reminders') }}"><i class="fas fa-bell me-2"></i>Reminders</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('banking', section='reports') }}"><i class="fas fa-chart-bar me-2"></i>Reports</a></li>
+                        </ul>
                     </li>
                 </ul>
                 

@@ -1,0 +1,1395 @@
+{% extends "base.html" %}
+
+{% block title %}Debt Management - Banking{% endblock %}
+
+{% block content %}
+<style>
+/* Minimal Banking System Styling - Matching Dashboard Design */
+.professional-dashboard {
+    font-size: 0.9rem;
+}
+
+.welcome-greeting {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #4b5563;
+}
+
+/* Header Section - Minimal Style */
+.banking-header {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 1rem;
+    box-shadow: none;
+    border: none;
+}
+
+.page-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #4b5563;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.page-title i {
+    color: #4b5563;
+    font-size: 0.95rem;
+}
+
+.breadcrumb-nav {
+    background: transparent;
+    border-radius: 0.5rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.breadcrumb-nav a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-nav a:hover {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.breadcrumb-nav span {
+    color: #9ca3af;
+}
+
+/* Metric Cards - Matching Dashboard Style */
+.metric-card {
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: #ffffff;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.125rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.03), transparent);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.metric-icon {
+    font-size: 1.625rem;
+    opacity: 1;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    color: #4b5563;
+}
+
+.metric-icon i {
+    color: inherit;
+    font-size: 1.5rem;
+    display: block;
+}
+
+.metric-card.net-balance-card .metric-icon {
+    color: #06b6d4;
+    background: #ffffff;
+}
+
+.metric-card.net-balance-card .metric-icon i {
+    color: #06b6d4 !important;
+}
+
+.metric-card.primary .metric-icon {
+    color: #3b82f6;
+    background: #ffffff;
+}
+
+.metric-card.primary .metric-icon i {
+    color: #3b82f6 !important;
+}
+
+.metric-card.warning .metric-icon {
+    color: #f59e0b;
+    background: #ffffff;
+}
+
+.metric-card.warning .metric-icon i {
+    color: #f59e0b !important;
+}
+
+.metric-card.success .metric-icon {
+    color: #10b981;
+    background: #ffffff;
+}
+
+.metric-card.success .metric-icon i {
+    color: #10b981 !important;
+}
+
+.metric-card.info .metric-icon {
+    color: #06b6d4;
+    background: #ffffff;
+}
+
+.metric-card.info .metric-icon i {
+    color: #06b6d4 !important;
+}
+
+.metric-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.metric-value {
+    font-size: 1.625rem;
+    font-weight: 700;
+    margin: 0.375rem 0 0.5rem 0;
+    line-height: 1.2;
+    color: #111827;
+    letter-spacing: -0.025em;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.metric-description,
+.metric-count {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+/* Tables - Minimal Style */
+.table-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.table-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.table-card .card-header {
+    background: linear-gradient(to bottom, #fafbfc, #f5f6f7);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 1rem 1.5rem;
+}
+
+.table-card .card-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+    letter-spacing: 0.01em;
+}
+
+.table {
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+.table thead th {
+    background: #fafbfc;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table tbody td {
+    padding: 0.75rem;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+    font-size: 0.75rem;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Badges */
+.badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.375rem;
+}
+
+/* Buttons - Minimal Style */
+.btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.btn-primary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.btn-sm {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+}
+
+/* Forms - Minimal Style */
+.form-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+}
+
+/* Status Colors */
+.status-active { color: #10b981; }
+.status-overdue { color: #ef4444; }
+.status-settled { color: #6b7280; }
+.status-pending { color: #f59e0b; }
+.status-paid { color: #10b981; }
+.status-partial { color: #3b82f6; }
+
+/* Table row hover effect */
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Badge styling */
+.badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.375rem;
+}
+
+/* Section title styling */
+h5.mb-0 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0;
+}
+
+/* Section header with action buttons */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+/* Search toggle button */
+#debtSearchToggleBtn.active,
+#emiSearchToggleBtn.active,
+#reminderSearchToggleBtn.active {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+    color: #000;
+}
+
+#debtSearchToggleBtn.active:hover,
+#emiSearchToggleBtn.active:hover,
+#reminderSearchToggleBtn.active:hover {
+    background-color: #0aa2c0;
+    border-color: #0aa2c0;
+    color: #000;
+}
+
+/* EMI Section specific styles */
+#emis .table-card .card-header .card-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+#emis .table thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#emis .table tbody td {
+    font-size: 0.75rem;
+    vertical-align: middle;
+}
+
+#emis .badge {
+    font-size: 0.7rem;
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+}
+
+#emis .btn-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+#emis #selectedDebtInfo strong {
+    color: #212529;
+    font-weight: 600;
+}
+
+/* Reminders Section specific styles */
+#reminders .table-card .card-header .card-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+#reminders .table thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#reminders .table tbody td {
+    font-size: 0.75rem;
+    vertical-align: middle;
+}
+
+#reminders .badge {
+    font-size: 0.7rem;
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+}
+
+#reminders .btn-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .welcome-greeting {
+        font-size: 0.9rem;
+    }
+    
+    .metric-card {
+        margin-bottom: 1rem;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+</style>
+
+<div class="container-fluid px-4 py-4 professional-dashboard">
+    <!-- Minimal Header -->
+    <div class="banking-header">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="welcome-greeting">
+                <i class="fas fa-university me-2"></i>
+                {% if section == 'dashboard' %}
+                    Banking Dashboard
+                {% elif section == 'customers' %}
+                    Customer Management
+                {% elif section == 'debts' %}
+                    Debt Management
+                {% elif section == 'emis' %}
+                    EMI Management
+                {% elif section == 'reminders' %}
+                    Reminders & Notifications
+                {% elif section == 'reports' %}
+                    Reports & Analytics
+                {% else %}
+                    Banking
+                {% endif %}
+            </div>
+            {% if section == 'customers' %}
+            <div>
+                <button class="btn btn-outline-secondary me-2" onclick="exportCustomers()">
+                    <i class="fas fa-download me-2"></i>Export
+                </button>
+                <button class="btn btn-primary" onclick="openCustomerModal()">
+                    <i class="fas fa-plus me-2"></i>Add Customer
+                </button>
+            </div>
+            {% elif section == 'debts' %}
+            <div>
+                <button class="btn btn-outline-info me-2" id="debtSearchToggleBtn" onclick="toggleDebtSearchSection()" title="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+                <select class="form-select form-select-sm d-inline-block w-auto me-2" id="debtStatusFilter" onchange="loadDebts()">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="settled">Settled</option>
+                </select>
+                <button class="btn btn-primary" onclick="openDebtModal()">
+                    <i class="fas fa-plus me-2"></i>Add Debt
+                </button>
+            </div>
+            {% elif section == 'emis' %}
+            <div>
+                <button class="btn btn-outline-info me-2" id="emiSearchToggleBtn" onclick="toggleEMISearchSection()" title="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            {% elif section == 'reminders' %}
+            <div>
+                <button class="btn btn-outline-info me-2" id="reminderSearchToggleBtn" onclick="toggleReminderSearchSection()" title="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+                <select class="form-select form-select-sm d-inline-block w-auto me-2" id="reminderStatusFilter" onchange="loadReminders()">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="sent">Sent</option>
+                </select>
+                <select class="form-select form-select-sm d-inline-block w-auto me-2" id="reminderTypeFilter" onchange="loadReminders()">
+                    <option value="all">All Types</option>
+                    <option value="upcoming_due">Upcoming Due</option>
+                    <option value="due_today">Due Today</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="manual">Manual</option>
+                </select>
+                <button class="btn btn-primary" onclick="openReminderModal()">
+                    <i class="fas fa-plus me-2"></i>Create Reminder
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Content Sections -->
+    <div id="bankingContent">
+        <!-- Dashboard Section -->
+        {% if section == 'dashboard' %}
+        <div id="dashboard" role="tabpanel">
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Total Outstanding</div>
+                            <div class="metric-value" id="totalOutstanding">₹0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card info">
+                        <div class="metric-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Collected This Month</div>
+                            <div class="metric-value" id="totalCollected">₹0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card net-balance-card">
+                        <div class="metric-icon">
+                            <i class="fas fa-list"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Active Debts</div>
+                            <div class="metric-value" id="activeDebts">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Overdue Debts</div>
+                            <div class="metric-value text-danger" id="overdueDebts">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="table-card">
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                <i class="fas fa-clock me-2"></i>Upcoming Payments (Next 7 Days)
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Customer</th>
+                                            <th>Debt Code</th>
+                                            <th>Installment</th>
+                                            <th>Amount</th>
+                                            <th>Due Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="upcomingPaymentsTable">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-4">No upcoming payments</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Customers Section -->
+        {% if section == 'customers' %}
+        <div id="customers" role="tabpanel">
+            <!-- Customer Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Total Customers</div>
+                            <div class="metric-value" id="totalCustomers">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card info">
+                        <div class="metric-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Total Outstanding</div>
+                            <div class="metric-value" id="totalOutstandingCustomers">₹0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card net-balance-card">
+                        <div class="metric-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Active Customers</div>
+                            <div class="metric-value" id="activeCustomers">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">With Outstanding</div>
+                            <div class="metric-value" id="customersWithOutstanding">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Outstanding</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTable">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">Loading customers...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Debts Section -->
+        {% if section == 'debts' %}
+        <div id="debts" role="tabpanel">
+            <!-- Search Section -->
+            <div class="container-fluid mb-3" id="debtSearchSection" style="display: none;">
+                <div class="table-card">
+                    <div class="card-body p-3">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1">Code</label>
+                                <input type="text" class="form-control form-control-sm" id="debtSearchCode" placeholder="Debt code">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small mb-1">Customer</label>
+                                <input type="text" class="form-control form-control-sm" id="debtSearchCustomer" placeholder="Customer name">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1">Amount</label>
+                                <input type="number" class="form-control form-control-sm" id="debtSearchAmount" placeholder="Amount">
+                            </div>
+                            <div class="col-md-2">
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary btn-sm" onclick="searchDebts()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="clearDebtSearch()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Debt Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Total Debts</div>
+                            <div class="metric-value" id="totalDebts">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card info">
+                        <div class="metric-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Total Outstanding</div>
+                            <div class="metric-value" id="totalDebtOutstanding">₹0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card net-balance-card">
+                        <div class="metric-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Active Debts</div>
+                            <div class="metric-value" id="activeDebtsCount">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Overdue Debts</div>
+                            <div class="metric-value" id="overdueDebtsCount">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Customer</th>
+                                    <th>Total Amount</th>
+                                    <th>Paid</th>
+                                    <th>Balance</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="debtsTable">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">Loading debts...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- EMIs Section -->
+        {% if section == 'emis' %}
+        <div id="emis" role="tabpanel">
+            <!-- Search Section -->
+            <div class="container-fluid mb-3" id="emiSearchSection" style="display: none;">
+                <div class="table-card">
+                    <div class="card-body p-3">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small mb-1" style="font-size: 0.75rem;">Search by Installment #</label>
+                                <input type="number" class="form-control form-control-sm" id="emiSearchInstallment" placeholder="Installment number" style="font-size: 0.8rem;">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small mb-1" style="font-size: 0.75rem;">Search by Status</label>
+                                <select class="form-select form-select-sm" id="emiSearchStatus" style="font-size: 0.8rem;">
+                                    <option value="">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="paid">Paid</option>
+                                    <option value="partial">Partial</option>
+                                    <option value="overdue">Overdue</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary btn-sm" onclick="searchEMIs()" style="font-size: 0.75rem;">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="clearEMISearch()" style="font-size: 0.75rem;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Debt Selector Card -->
+            <div class="table-card mb-4">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1" style="font-size: 0.75rem;">Select Debt</label>
+                            <select class="form-select form-select-sm" id="debtSelectForEMI" onchange="loadEMIs()" style="font-size: 0.8rem;">
+                                <option value="">Select a debt to view EMIs</option>
+                            </select>
+                        </div>
+                        <div class="col-md-9" id="selectedDebtInfo" style="display: none;">
+                            <div class="d-flex align-items-center gap-4">
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Debt Code</small>
+                                    <strong id="selectedDebtCode" style="font-size: 0.8rem;">-</strong>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Customer</small>
+                                    <strong id="selectedDebtCustomer" style="font-size: 0.8rem;">-</strong>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Total Amount</small>
+                                    <strong id="selectedDebtAmount" style="font-size: 0.8rem;">-</strong>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Balance</small>
+                                    <strong id="selectedDebtBalance" style="font-size: 0.8rem;">-</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- EMI Statistics Cards -->
+            <div class="row mb-4" id="emiStatsCards" style="display: none; flex-wrap: wrap;">
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Total EMIs</div>
+                            <div class="metric-value" id="totalEMIs">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card success">
+                        <div class="metric-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Paid EMIs</div>
+                            <div class="metric-value" id="paidEMIs">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Pending EMIs</div>
+                            <div class="metric-value" id="pendingEMIs">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card net-balance-card">
+                        <div class="metric-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Total Pending Amount</div>
+                            <div class="metric-value" id="pendingEMIAmount">₹0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-list me-2"></i>EMI Installments
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Due Date</th>
+                                    <th>Amount</th>
+                                    <th>Paid</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="emisTable">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">Select a debt to view EMIs</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Reminders Section -->
+        {% if section == 'reminders' %}
+        <div id="reminders" role="tabpanel">
+            <!-- Search Section -->
+            <div class="container-fluid mb-3" id="reminderSearchSection" style="display: none;">
+                <div class="table-card">
+                    <div class="card-body p-3">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1" style="font-size: 0.75rem;">Search by Customer</label>
+                                <input type="text" class="form-control form-control-sm" id="reminderSearchCustomer" placeholder="Customer name" style="font-size: 0.8rem;">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1" style="font-size: 0.75rem;">Search by Debt Code</label>
+                                <input type="text" class="form-control form-control-sm" id="reminderSearchDebtCode" placeholder="Debt code" style="font-size: 0.8rem;">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1" style="font-size: 0.75rem;">Date Range</label>
+                                <input type="date" class="form-control form-control-sm" id="reminderSearchDate" style="font-size: 0.8rem;">
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary btn-sm" onclick="searchReminders()" style="font-size: 0.75rem;">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="clearReminderSearch()" style="font-size: 0.75rem;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reminder Statistics Cards -->
+            <div class="row mb-4" id="reminderStatsCards">
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Total Reminders</div>
+                            <div class="metric-value" id="totalReminders">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Pending</div>
+                            <div class="metric-value" id="pendingReminders">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card info">
+                        <div class="metric-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Sent</div>
+                            <div class="metric-value" id="sentReminders">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="metric-card net-balance-card">
+                        <div class="metric-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-label">Due Today</div>
+                            <div class="metric-value" id="dueTodayReminders">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-list me-2"></i>Reminders & Notifications
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Debt Code</th>
+                                    <th>Type</th>
+                                    <th>Scheduled Date</th>
+                                    <th>Channel</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="remindersTable">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">Loading reminders...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Reports Section -->
+        {% if section == 'reports' %}
+        <div id="reports" role="tabpanel">
+            <div class="row">
+                <div class="col-md-12 mb-4">
+                    <div class="table-card">
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                <i class="fas fa-chart-line me-2"></i>Monthly Collection Trend
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="collectionChart" height="80"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Customer Modal -->
+<div class="modal fade" id="customerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerModalTitle">
+                    <i class="fas fa-user-plus me-2"></i>Add Customer
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm">
+                    <input type="hidden" id="customerId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="customerName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="customerPhone">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="customerEmail">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Customer Code</label>
+                            <input type="text" class="form-control" id="customerCode">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Address</label>
+                            <textarea class="form-control" id="customerAddress" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" id="customerCity">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State</label>
+                            <input type="text" class="form-control" id="customerState">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Pincode</label>
+                            <input type="text" class="form-control" id="customerPincode">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">PAN Number</label>
+                            <input type="text" class="form-control" id="customerPAN">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Aadhar Number</label>
+                            <input type="text" class="form-control" id="customerAadhar">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" id="customerNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Debt Modal -->
+<div class="modal fade" id="debtModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="debtModalTitle">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Add Debt
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="debtForm">
+                    <input type="hidden" id="debtId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Customer *</label>
+                            <select class="form-select" id="debtCustomerId" required onchange="updateEMICalculation()">
+                                <option value="">Select Customer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Total Amount *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" id="debtTotalAmount" step="0.01" required onchange="updateEMICalculation()">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Interest Rate (%)</label>
+                            <input type="number" class="form-control" id="debtInterestRate" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Due Date</label>
+                            <input type="date" class="form-control" id="debtDueDate" onchange="updateEMICalculation()">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Start Date *</label>
+                            <input type="date" class="form-control" id="debtStartDate" required onchange="updateEMICalculation()">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Loan Purpose</label>
+                            <input type="text" class="form-control" id="debtLoanPurpose">
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="debtEMIEnabled" onchange="toggleEMIFields()">
+                                <label class="form-check-label" for="debtEMIEnabled">
+                                    Enable EMI (Installment Plan)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6" id="emiCountField" style="display: none;">
+                            <label class="form-label">Number of Installments</label>
+                            <input type="number" class="form-control" id="debtEMICount" min="1" onchange="updateEMICalculation()">
+                        </div>
+                        <div class="col-md-6" id="emiAmountField" style="display: none;">
+                            <label class="form-label">EMI Amount (per installment)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" id="debtEMIAmount" step="0.01" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" id="debtNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveDebt()">Save Debt</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-money-bill-wave me-2"></i>Record Payment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Debt *</label>
+                            <select class="form-select" id="paymentDebtId" required onchange="loadDebtEMIs()">
+                                <option value="">Select Debt</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Customer</label>
+                            <input type="text" class="form-control" id="paymentCustomerName" readonly>
+                            <input type="hidden" id="paymentCustomerId">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">EMI (Optional)</label>
+                            <select class="form-select" id="paymentEMIId">
+                                <option value="">Select EMI (if applicable)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Amount *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" id="paymentAmount" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Payment Method *</label>
+                            <select class="form-select" id="paymentMethod" required>
+                                <option value="cash">Cash</option>
+                                <option value="upi">UPI</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="card">Card</option>
+                                <option value="cheque">Cheque</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Payment Date *</label>
+                            <input type="date" class="form-control" id="paymentDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Transaction ID</label>
+                            <input type="text" class="form-control" id="paymentTransactionId">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Receipt Number</label>
+                            <input type="text" class="form-control" id="paymentReceiptNumber">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Remarks</label>
+                            <textarea class="form-control" id="paymentRemarks" rows="2"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="savePayment()">Record Payment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reminder Modal -->
+<div class="modal fade" id="reminderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-bell me-2"></i>Create Reminder
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reminderForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Debt *</label>
+                            <select class="form-select" id="reminderDebtId" required onchange="loadReminderEMIs()">
+                                <option value="">Select Debt</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Customer</label>
+                            <input type="text" class="form-control" id="reminderCustomerName" readonly>
+                            <input type="hidden" id="reminderCustomerId">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">EMI (Optional)</label>
+                            <select class="form-select" id="reminderEMIId">
+                                <option value="">Select EMI (if applicable)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Reminder Type *</label>
+                            <select class="form-select" id="reminderType" required>
+                                <option value="upcoming_due">Upcoming Due</option>
+                                <option value="due_today">Due Today</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="manual">Manual</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Scheduled Date *</label>
+                            <input type="date" class="form-control" id="reminderScheduledDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Channel *</label>
+                            <select class="form-select" id="reminderChannel" required>
+                                <option value="in_app">In-App</option>
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                                <option value="whatsapp">WhatsApp</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="reminderSubject">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Message *</label>
+                            <textarea class="form-control" id="reminderMessage" rows="4" required></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveReminder()">Create Reminder</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='banking.js') }}"></script>
+{% endblock %}
+

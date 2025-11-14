@@ -1021,6 +1021,11 @@ def transactions():
 def invoices():
     return render_template('invoices.html', current_user=get_current_user())
 
+@app.route('/inventory')
+@login_required
+def inventory():
+    return render_template('inventory.html', current_user=get_current_user())
+
 @app.route('/sub-users')
 @login_required
 def sub_users():
@@ -1071,6 +1076,923 @@ def monthly_expenses():
     
     # GET request - display page with expenses
     return render_template('monthly_expenses.html', current_user=get_current_user())
+
+@app.route('/banking', methods=['GET'])
+@login_required
+def banking():
+    """Debt Management Banking System page"""
+    section = request.args.get('section', 'dashboard')
+    return render_template('banking.html', current_user=get_current_user(), section=section)
+
+# ==================== DEBT MANAGEMENT API ENDPOINTS ====================
+
+# Customer Management
+@app.route('/api/banking/customers', methods=['GET'])
+@login_required
+def get_customers():
+    """Get all customers for the current user"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        search = request.args.get('search', '')
+        
+        query = "SELECT * FROM customers WHERE user_id = %s"
+        params = [session['user_id']]
+        
+        if search:
+            query += " AND (name LIKE %s OR phone LIKE %s OR email LIKE %s OR customer_code LIKE %s)"
+            search_param = f"%{search}%"
+            params.extend([search_param, search_param, search_param, search_param])
+        
+        query += " ORDER BY created_at DESC"
+        cursor.execute(query, params)
+        customers = cursor.fetchall()
+        
+        # Calculate outstanding balance for each customer
+        for customer in customers:
+            cursor.execute("""
+                SELECT COALESCE(SUM(balance), 0) as total_outstanding
+                FROM debts 
+                WHERE customer_id = %s AND user_id = %s AND status IN ('active', 'overdue')
+            """, (customer['id'], session['user_id']))
+            result = cursor.fetchone()
+            customer['outstanding_balance'] = float(result['total_outstanding']) if result else 0.0
+        
+        cursor.close()
+        connection.close()
+        return jsonify(customers)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        # Return empty array on error to prevent frontend crashes
+        return jsonify([])
+
+@app.route('/api/banking/customers', methods=['POST'])
+@login_required
+def create_customer():
+    """Create a new customer"""
+    try:
+        data = request.get_json()
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        
+        # Generate customer code if not provided
+        customer_code = data.get('customer_code')
+        if not customer_code:
+            cursor.execute("SELECT COUNT(*) as count FROM customers WHERE user_id = %s", (session['user_id'],))
+            count = cursor.fetchone()[0]
+            customer_code = f"CUST{str(count + 1).zfill(4)}"
+        
+        cursor.execute("""
+            INSERT INTO customers (user_id, customer_code, name, phone, email, address, city, state, pincode, pan_number, aadhar_number, status, notes)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            session['user_id'], customer_code, data.get('name'), data.get('phone'), data.get('email'),
+            data.get('address'), data.get('city'), data.get('state'), data.get('pincode'),
+            data.get('pan_number'), data.get('aadhar_number'), data.get('status', 'active'), data.get('notes')
+        ))
+        
+        connection.commit()
+        customer_id = cursor.lastrowid
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'id': customer_id, 'message': 'Customer created successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/banking/customers/<int:customer_id>', methods=['PUT'])
+@login_required
+def update_customer(customer_id):
+    """Update a customer"""
+    try:
+        data = request.get_json()
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        cursor.execute("""
+            UPDATE customers 
+            SET name = %s, phone = %s, email = %s, address = %s, city = %s, state = %s, pincode = %s,
+                pan_number = %s, aadhar_number = %s, status = %s, notes = %s
+            WHERE id = %s AND user_id = %s
+        """, (
+            data.get('name'), data.get('phone'), data.get('email'), data.get('address'),
+            data.get('city'), data.get('state'), data.get('pincode'), data.get('pan_number'),
+            data.get('aadhar_number'), data.get('status', 'active'), data.get('notes'), customer_id, session['user_id']
+        ))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Customer updated successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/banking/customers/<int:customer_id>', methods=['DELETE'])
+@login_required
+def delete_customer(customer_id):
+    """Delete a customer"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM customers WHERE id = %s AND user_id = %s", (customer_id, session['user_id']))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Customer deleted successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/banking/customers/<int:customer_id>/toggle-status', methods=['POST'])
+@login_required
+def toggle_customer_status(customer_id):
+    """Toggle customer status between active and inactive"""
+    try:
+        data = request.get_json()
+        new_status = data.get('status', 'inactive')
+        
+        if new_status not in ['active', 'inactive']:
+            return jsonify({'error': 'Invalid status. Must be "active" or "inactive"'}), 400
+        
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        cursor.execute("""
+            UPDATE customers 
+            SET status = %s
+            WHERE id = %s AND user_id = %s
+        """, (new_status, customer_id, session['user_id']))
+        
+        if cursor.rowcount == 0:
+            cursor.close()
+            connection.close()
+            return jsonify({'error': 'Customer not found'}), 404
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        action = 'activated' if new_status == 'active' else 'deactivated'
+        return jsonify({'success': True, 'message': f'Customer {action} successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/banking/customers/export', methods=['GET'])
+@login_required
+def export_customers():
+    """Export all customers as PDF"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM customers WHERE user_id = %s ORDER BY created_at DESC", (session['user_id'],))
+        customers = cursor.fetchall()
+        
+        # Calculate outstanding balance for each customer
+        for customer in customers:
+            cursor.execute("""
+                SELECT COALESCE(SUM(balance), 0) as total_outstanding
+                FROM debts 
+                WHERE customer_id = %s AND user_id = %s AND status IN ('active', 'overdue')
+            """, (customer['id'], session['user_id']))
+            result = cursor.fetchone()
+            customer['outstanding_balance'] = float(result['total_outstanding']) if result else 0.0
+        
+        cursor.close()
+        connection.close()
+        
+        if not customers:
+            return jsonify({'error': 'No customers found'}), 404
+        
+        # Generate PDF
+        pdf_buffer = generate_customers_pdf(customers)
+        
+        from flask import make_response
+        response = make_response(pdf_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=customers_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+        return response
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+def generate_customers_pdf(customers):
+    """Generate PDF for customers export"""
+    from reportlab.lib.pagesizes import letter, A4, landscape
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    import io
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), topMargin=0.5*inch, bottomMargin=0.5*inch)
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+    
+    # Title
+    title = Paragraph("Customers Export Report", title_style)
+    
+    # Table data
+    table_data = [['Code', 'Name', 'Phone', 'Email', 'Outstanding', 'Status', 'City', 'State']]
+    
+    total_outstanding = 0
+    for customer in customers:
+        outstanding = float(customer.get('outstanding_balance', 0) or 0)
+        table_data.append([
+            customer.get('customer_code', 'N/A'),
+            customer.get('name', 'N/A'),
+            customer.get('phone', 'N/A'),
+            customer.get('email', 'N/A'),
+            f"₹{outstanding:,.2f}",
+            customer.get('status', 'N/A').upper(),
+            customer.get('city', 'N/A'),
+            customer.get('state', 'N/A')
+        ])
+        total_outstanding += outstanding
+    
+    # Add total row
+    table_data.append(['', '', '', '', f"₹{total_outstanding:,.2f}", '', '', 'TOTAL'])
+    
+    # Create table with optimized column widths for landscape
+    table = Table(table_data, colWidths=[1.2*inch, 2*inch, 1.2*inch, 2*inch, 1.2*inch, 0.8*inch, 1*inch, 1*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -2), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.lightgrey]),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.darkgrey),
+        ('TEXTCOLOR', (0, -1), (-1, -1), colors.whitesmoke),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+    ]))
+    
+    # Build PDF
+    story = [title, Spacer(1, 12), table]
+    doc.build(story)
+    
+    return buffer
+
+# Debt Management
+@app.route('/api/banking/debts', methods=['GET'])
+@login_required
+def get_debts():
+    """Get all debts with filters"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        
+        status = request.args.get('status', 'all')
+        customer_id = request.args.get('customer_id')
+        due_date_from = request.args.get('due_date_from')
+        due_date_to = request.args.get('due_date_to')
+        code = request.args.get('code', '').strip()
+        customer = request.args.get('customer', '').strip()
+        amount = request.args.get('amount', '').strip()
+        
+        query = """
+            SELECT d.*, c.name as customer_name, c.phone as customer_phone, c.email as customer_email
+            FROM debts d
+            LEFT JOIN customers c ON d.customer_id = c.id
+            WHERE d.user_id = %s
+        """
+        params = [session['user_id']]
+        
+        if status != 'all':
+            query += " AND d.status = %s"
+            params.append(status)
+        
+        if customer_id:
+            query += " AND d.customer_id = %s"
+            params.append(int(customer_id))
+        
+        if due_date_from:
+            query += " AND d.due_date >= %s"
+            params.append(due_date_from)
+        
+        if due_date_to:
+            query += " AND d.due_date <= %s"
+            params.append(due_date_to)
+        
+        if code:
+            query += " AND d.debt_code LIKE %s"
+            params.append(f"%{code}%")
+        
+        if customer:
+            query += " AND c.name LIKE %s"
+            params.append(f"%{customer}%")
+        
+        if amount:
+            try:
+                amount_value = float(amount)
+                query += " AND d.total_amount = %s"
+                params.append(amount_value)
+            except ValueError:
+                pass
+        
+        query += " ORDER BY d.created_at DESC"
+        cursor.execute(query, params)
+        debts = cursor.fetchall()
+        
+        # Convert decimal to float for JSON serialization
+        for debt in debts:
+            debt['total_amount'] = float(debt['total_amount'])
+            debt['paid_amount'] = float(debt['paid_amount'])
+            debt['balance'] = float(debt['balance'])
+            debt['interest_rate'] = float(debt['interest_rate']) if debt['interest_rate'] else 0.0
+            debt['emi_amount'] = float(debt['emi_amount']) if debt['emi_amount'] else 0.0
+            if debt['due_date']:
+                debt['due_date'] = debt['due_date'].isoformat()
+            if debt['start_date']:
+                debt['start_date'] = debt['start_date'].isoformat()
+        
+        cursor.close()
+        connection.close()
+        return jsonify(debts)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        # Return empty array on error to prevent frontend crashes
+        return jsonify([])
+
+@app.route('/api/banking/debts', methods=['POST'])
+@login_required
+def create_debt():
+    """Create a new debt"""
+    try:
+        data = request.get_json()
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        
+        total_amount = float(data.get('total_amount', 0))
+        interest_rate = float(data.get('interest_rate', 0))
+        emi_enabled = data.get('emi_enabled', False)
+        emi_count = int(data.get('emi_count', 0)) if emi_enabled else 0
+        
+        # Generate debt code if not provided
+        debt_code = data.get('debt_code')
+        if not debt_code:
+            cursor.execute("SELECT COUNT(*) as count FROM debts WHERE user_id = %s", (session['user_id'],))
+            count = cursor.fetchone()[0]
+            debt_code = f"DEBT{str(count + 1).zfill(4)}"
+        
+        # Calculate EMI amount if enabled
+        emi_amount = 0.0
+        if emi_enabled and emi_count > 0:
+            # Simple EMI calculation: total_amount / emi_count
+            emi_amount = total_amount / emi_count
+        
+        cursor.execute("""
+            INSERT INTO debts (user_id, customer_id, debt_code, total_amount, paid_amount, balance, interest_rate,
+                             due_date, start_date, status, loan_purpose, notes, emi_enabled, emi_count, emi_amount, product_id, transaction_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            session['user_id'], data.get('customer_id'), debt_code, total_amount, 0.0, total_amount,
+            interest_rate, data.get('due_date'), data.get('start_date', date.today().isoformat()),
+            'active', data.get('loan_purpose'), data.get('notes'), emi_enabled, emi_count, emi_amount,
+            data.get('product_id'), data.get('transaction_id')
+        ))
+        
+        debt_id = cursor.lastrowid
+        
+        # Create EMI installments if enabled
+        if emi_enabled and emi_count > 0:
+            start_date = datetime.strptime(data.get('start_date', date.today().isoformat()), '%Y-%m-%d')
+            due_date = datetime.strptime(data.get('due_date'), '%Y-%m-%d') if data.get('due_date') else start_date
+            
+            # Calculate days between installments
+            days_between = (due_date - start_date).days / emi_count if emi_count > 0 else 30
+            
+            for i in range(1, emi_count + 1):
+                emi_due_date = start_date + timedelta(days=int(days_between * i))
+                cursor.execute("""
+                    INSERT INTO emis (debt_id, customer_id, user_id, installment_number, due_date, amount, paid_amount, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending')
+                """, (debt_id, data.get('customer_id'), session['user_id'], i, emi_due_date.date(), emi_amount, 0.0))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'id': debt_id, 'message': 'Debt created successfully'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/banking/debts/<int:debt_id>', methods=['PUT'])
+@login_required
+def update_debt(debt_id):
+    """Update a debt"""
+    try:
+        data = request.get_json()
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        cursor.execute("""
+            UPDATE debts 
+            SET total_amount = %s, interest_rate = %s, due_date = %s, status = %s, loan_purpose = %s, notes = %s
+            WHERE id = %s AND user_id = %s
+        """, (
+            data.get('total_amount'), data.get('interest_rate'), data.get('due_date'),
+            data.get('status'), data.get('loan_purpose'), data.get('notes'), debt_id, session['user_id']
+        ))
+        
+        # Recalculate balance
+        cursor.execute("SELECT paid_amount FROM debts WHERE id = %s", (debt_id,))
+        paid = cursor.fetchone()[0]
+        cursor.execute("UPDATE debts SET balance = total_amount - %s WHERE id = %s", (paid, debt_id))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Debt updated successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/banking/debts/<int:debt_id>', methods=['DELETE'])
+@login_required
+def delete_debt(debt_id):
+    """Delete a debt"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM debts WHERE id = %s AND user_id = %s", (debt_id, session['user_id']))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Debt deleted successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# EMI Management
+@app.route('/api/banking/debts/<int:debt_id>/emis', methods=['GET'])
+@login_required
+def get_emis(debt_id):
+    """Get all EMIs for a debt"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT e.*, 
+                   (SELECT receipt_number FROM debt_payments 
+                    WHERE emi_id = e.id AND user_id = %s 
+                    ORDER BY payment_date DESC, created_at DESC LIMIT 1) as receipt_number,
+                   (SELECT id FROM debt_payments 
+                    WHERE emi_id = e.id AND user_id = %s 
+                    ORDER BY payment_date DESC, created_at DESC LIMIT 1) as payment_id
+            FROM emis e
+            WHERE e.debt_id = %s AND e.user_id = %s
+            ORDER BY e.installment_number ASC
+        """, (session['user_id'], session['user_id'], debt_id, session['user_id']))
+        
+        emis = cursor.fetchall()
+        
+        for emi in emis:
+            emi['amount'] = float(emi['amount'])
+            emi['paid_amount'] = float(emi['paid_amount'])
+            emi['late_fee'] = float(emi['late_fee']) if emi['late_fee'] else 0.0
+            if emi['due_date']:
+                emi['due_date'] = emi['due_date'].isoformat()
+            if emi['paid_date']:
+                emi['paid_date'] = emi['paid_date'].isoformat()
+        
+        cursor.close()
+        connection.close()
+        return jsonify(emis)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        # Return empty array on error to prevent frontend crashes
+        return jsonify([])
+
+# Payment Collection
+@app.route('/api/banking/payments', methods=['POST'])
+@login_required
+def create_payment():
+    """Record a payment"""
+    try:
+        data = request.get_json()
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        
+        amount = float(data.get('amount', 0))
+        debt_id = data.get('debt_id')
+        emi_id = data.get('emi_id')
+        
+        # Generate receipt number if not provided
+        receipt_number = data.get('receipt_number')
+        if not receipt_number:
+            cursor.execute("SELECT COUNT(*) as count FROM debt_payments WHERE user_id = %s", (session['user_id'],))
+            count = cursor.fetchone()[0]
+            receipt_number = f"RCP{str(count + 1).zfill(6)}"
+        
+        cursor.execute("""
+            INSERT INTO debt_payments (debt_id, customer_id, user_id, emi_id, amount, payment_method, payment_date,
+                                     transaction_id, bank_account_id, receipt_number, remarks)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            debt_id, data.get('customer_id'), session['user_id'], emi_id, amount,
+            data.get('payment_method', 'cash'), data.get('payment_date', date.today().isoformat()),
+            data.get('transaction_id'), data.get('bank_account_id'), receipt_number, data.get('remarks')
+        ))
+        
+        payment_id = cursor.lastrowid
+        
+        # Update debt paid_amount and balance
+        cursor.execute("""
+            UPDATE debts 
+            SET paid_amount = paid_amount + %s, balance = balance - %s
+            WHERE id = %s
+        """, (amount, amount, debt_id))
+        
+        # Check if debt is fully paid
+        cursor.execute("SELECT total_amount, paid_amount FROM debts WHERE id = %s", (debt_id,))
+        debt = cursor.fetchone()
+        if debt and float(debt[1]) >= float(debt[0]):
+            cursor.execute("UPDATE debts SET status = 'settled' WHERE id = %s", (debt_id,))
+        
+        # Update EMI if linked and create transaction for every EMI payment
+        if emi_id:
+            cursor.execute("""
+                UPDATE emis 
+                SET paid_amount = paid_amount + %s, status = CASE 
+                    WHEN paid_amount + %s >= amount THEN 'paid'
+                    WHEN paid_amount + %s > 0 THEN 'partial'
+                    ELSE 'pending'
+                END, paid_date = %s
+                WHERE id = %s
+            """, (amount, amount, amount, data.get('payment_date', date.today().isoformat()), emi_id))
+            
+            # Create transaction automatically for every EMI payment
+            try:
+                # Get default bank account
+                cursor.execute("""
+                    SELECT id FROM bank_accounts 
+                    WHERE user_id = %s AND is_default = TRUE 
+                    LIMIT 1
+                """, (session['user_id'],))
+                default_bank = cursor.fetchone()
+                bank_account_id = default_bank[0] if default_bank else None
+                
+                # Get customer and debt info for transaction
+                cursor.execute("""
+                    SELECT c.name, d.debt_code, e.installment_number
+                    FROM emis e
+                    JOIN customers c ON e.customer_id = c.id
+                    JOIN debts d ON e.debt_id = d.id
+                    WHERE e.id = %s
+                """, (emi_id,))
+                emi_info = cursor.fetchone()
+                
+                if emi_info:
+                    customer_name = emi_info[0]
+                    debt_code = emi_info[1]
+                    installment_num = emi_info[2]
+                    
+                    # Generate unique ID for transaction
+                    transaction_unique_id = generate_unique_id('TXN')
+                    
+                    # Determine payment method
+                    payment_method = 'online' if bank_account_id else 'cash'
+                    
+                    # Create credit transaction for EMI payment
+                    cursor.execute("""
+                        INSERT INTO transactions (user_id, unique_id, title, description, purpose, amount, transaction_type, 
+                                                category, payment_method, transaction_date, source, source_id, bank_account_id)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        session['user_id'],
+                        transaction_unique_id,
+                        f"EMI Payment - {debt_code}",
+                        f"EMI Payment for {customer_name} - Installment #{installment_num}",
+                        'EMI Payment',
+                        amount,
+                        'credit',
+                        'Banking',
+                        payment_method,
+                        data.get('payment_date', date.today().isoformat()),
+                        'emi',
+                        emi_id,
+                        bank_account_id
+                    ))
+                    
+                    # Update bank balance if bank account is specified
+                    if bank_account_id:
+                        cursor.execute("""
+                            UPDATE bank_accounts 
+                            SET current_balance = current_balance + %s 
+                            WHERE id = %s AND user_id = %s
+                        """, (amount, bank_account_id, session['user_id']))
+                    else:
+                        # Update cash balance if no bank account
+                        cursor.execute("""
+                            UPDATE users 
+                            SET cash_balance = cash_balance + %s 
+                            WHERE id = %s
+                        """, (amount, session['user_id']))
+            except Exception as e:
+                # Log error but don't fail the payment
+                import traceback
+                traceback.print_exc()
+                print(f"Error creating transaction for EMI payment: {e}")
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'id': payment_id, 'receipt_number': receipt_number, 'message': 'Payment recorded successfully'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/banking/payments', methods=['GET'])
+@login_required
+def get_payments():
+    """Get all payments with filters"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        
+        debt_id = request.args.get('debt_id')
+        customer_id = request.args.get('customer_id')
+        
+        query = """
+            SELECT p.*, d.debt_code, c.name as customer_name
+            FROM debt_payments p
+            LEFT JOIN debts d ON p.debt_id = d.id
+            LEFT JOIN customers c ON p.customer_id = c.id
+            WHERE p.user_id = %s
+        """
+        params = [session['user_id']]
+        
+        if debt_id:
+            query += " AND p.debt_id = %s"
+            params.append(int(debt_id))
+        
+        if customer_id:
+            query += " AND p.customer_id = %s"
+            params.append(int(customer_id))
+        
+        query += " ORDER BY p.payment_date DESC, p.created_at DESC"
+        cursor.execute(query, params)
+        payments = cursor.fetchall()
+        
+        for payment in payments:
+            payment['amount'] = float(payment['amount'])
+            if payment['payment_date']:
+                payment['payment_date'] = payment['payment_date'].isoformat()
+        
+        cursor.close()
+        connection.close()
+        return jsonify(payments)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        # Return empty array on error to prevent frontend crashes
+        return jsonify([])
+
+# Reminders
+@app.route('/api/banking/reminders', methods=['GET'])
+@login_required
+def get_reminders():
+    """Get all reminders"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT r.*, d.debt_code, c.name as customer_name
+            FROM debt_reminders r
+            LEFT JOIN debts d ON r.debt_id = d.id
+            LEFT JOIN customers c ON r.customer_id = c.id
+            WHERE r.user_id = %s
+            ORDER BY r.scheduled_date DESC
+        """, (session['user_id'],))
+        
+        reminders = cursor.fetchall()
+        
+        for reminder in reminders:
+            if reminder['scheduled_date']:
+                reminder['scheduled_date'] = reminder['scheduled_date'].isoformat()
+            if reminder['sent_date']:
+                reminder['sent_date'] = reminder['sent_date'].isoformat()
+        
+        cursor.close()
+        connection.close()
+        return jsonify(reminders)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        # Return empty array on error to prevent frontend crashes
+        return jsonify([])
+
+@app.route('/api/banking/reminders', methods=['POST'])
+@login_required
+def create_reminder():
+    """Create a reminder"""
+    try:
+        data = request.get_json()
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        cursor.execute("""
+            INSERT INTO debt_reminders (debt_id, customer_id, user_id, emi_id, reminder_type, scheduled_date,
+                                      channel, message, subject)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            data.get('debt_id'), data.get('customer_id'), session['user_id'], data.get('emi_id'),
+            data.get('reminder_type', 'manual'), data.get('scheduled_date'), data.get('channel', 'in_app'),
+            data.get('message'), data.get('subject')
+        ))
+        
+        connection.commit()
+        reminder_id = cursor.lastrowid
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'id': reminder_id, 'message': 'Reminder created successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Dashboard Analytics
+@app.route('/api/banking/dashboard', methods=['GET'])
+@login_required
+def get_banking_dashboard():
+    """Get banking dashboard statistics"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        user_id = session['user_id']
+        
+        # Total outstanding
+        cursor.execute("""
+            SELECT COALESCE(SUM(balance), 0) as total_outstanding
+            FROM debts WHERE user_id = %s AND status IN ('active', 'overdue')
+        """, (user_id,))
+        total_outstanding = float(cursor.fetchone()['total_outstanding'])
+        
+        # Total collected this month
+        cursor.execute("""
+            SELECT COALESCE(SUM(amount), 0) as total_collected
+            FROM debt_payments 
+            WHERE user_id = %s AND MONTH(payment_date) = MONTH(CURRENT_DATE()) 
+            AND YEAR(payment_date) = YEAR(CURRENT_DATE())
+        """, (user_id,))
+        total_collected = float(cursor.fetchone()['total_collected'])
+        
+        # Active debts count
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM debts WHERE user_id = %s AND status = 'active'
+        """, (user_id,))
+        active_debts = cursor.fetchone()['count']
+        
+        # Overdue debts count
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM debts 
+            WHERE user_id = %s AND (status = 'overdue' OR (due_date < CURDATE() AND status = 'active'))
+        """, (user_id,))
+        overdue_debts = cursor.fetchone()['count']
+        
+        # Upcoming payments (next 7 days)
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM emis 
+            WHERE user_id = %s AND status = 'pending' 
+            AND due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+        """, (user_id,))
+        upcoming_payments = cursor.fetchone()['count']
+        
+        # Monthly collection trend (last 6 months)
+        cursor.execute("""
+            SELECT 
+                DATE_FORMAT(payment_date, '%Y-%m') as month,
+                SUM(amount) as collected
+            FROM debt_payments
+            WHERE user_id = %s AND payment_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            GROUP BY DATE_FORMAT(payment_date, '%Y-%m')
+            ORDER BY month ASC
+        """, (user_id,))
+        monthly_trend = cursor.fetchall()
+        for item in monthly_trend:
+            item['collected'] = float(item['collected'])
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({
+            'total_outstanding': total_outstanding,
+            'total_collected': total_collected,
+            'active_debts': active_debts,
+            'overdue_debts': overdue_debts,
+            'upcoming_payments': upcoming_payments,
+            'monthly_trend': monthly_trend
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+# Upcoming Payments
+@app.route('/api/banking/upcoming-payments', methods=['GET'])
+@login_required
+def get_upcoming_payments():
+    """Get upcoming payments for dashboard widget"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        days = int(request.args.get('days', 7))
+        
+        cursor.execute("""
+            SELECT e.*, d.debt_code, c.name as customer_name, c.phone as customer_phone
+            FROM emis e
+            LEFT JOIN debts d ON e.debt_id = d.id
+            LEFT JOIN customers c ON e.customer_id = c.id
+            WHERE e.user_id = %s AND e.status = 'pending'
+            AND e.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL %s DAY)
+            ORDER BY e.due_date ASC
+        """, (session['user_id'], days))
+        
+        payments = cursor.fetchall()
+        
+        for payment in payments:
+            payment['amount'] = float(payment['amount'])
+            payment['paid_amount'] = float(payment['paid_amount'])
+            if payment['due_date']:
+                payment['due_date'] = payment['due_date'].isoformat()
+        
+        cursor.close()
+        connection.close()
+        return jsonify(payments)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        # Return empty array on error to prevent frontend crashes
+        return jsonify([])
 
 # File serving route
 @app.route('/uploads/<filename>')
@@ -3196,20 +4118,50 @@ def create_invoice():
         
         invoice_id = cursor.lastrowid
         
-        # Insert invoice items
+        # Insert invoice items and update product inventory
         for item in data['items']:
+            product_id = item.get('product_id')
+            quantity = float(item.get('quantity', 0))
+            
+            # Validate quantity if product is selected
+            if product_id and quantity > 0:
+                cursor.execute("""
+                    SELECT quantity FROM products 
+                    WHERE id = %s AND user_id = %s
+                """, (product_id, session['user_id']))
+                product = cursor.fetchone()
+                if product:
+                    available_quantity = float(product[0])
+                    if quantity > available_quantity:
+                        connection.rollback()
+                        cursor.close()
+                        connection.close()
+                        return jsonify({
+                            'error': f'Insufficient quantity. Available: {available_quantity}, Requested: {quantity}'
+                        }), 400
+            
+            # Insert invoice item
             cursor.execute("""
-                INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, total_price, sac_code, tax_rate)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, total_price, sac_code, tax_rate, product_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 invoice_id,
-                item['description'],
-                item['quantity'],
-                item['unit_price'],
-                item['quantity'] * item['unit_price'],
-                item.get('sac_code', '998313'),
-                item.get('tax_rate', 18)
+                item.get('description', ''),
+                quantity,
+                item.get('unit_price', 0),
+                quantity * item.get('unit_price', 0),
+                item.get('sac_code') or '998313',  # Use provided sac_code or default
+                item.get('tax_rate', 18),
+                product_id
             ))
+            
+            # If product_id is provided, deduct quantity from inventory
+            if product_id and quantity > 0:
+                cursor.execute("""
+                    UPDATE products 
+                    SET quantity = quantity - %s 
+                    WHERE id = %s AND user_id = %s
+                """, (quantity, product_id, session['user_id']))
         
         # Insert bank details if provided
         if data.get('account_number') or data.get('ifsc_code') or data.get('bank_name') or data.get('upi_id'):
@@ -3624,25 +4576,73 @@ def update_invoice(invoice_id):
             session['user_id']
         ))
         
+        # First, restore quantities from old invoice items before deleting them
+        cursor.execute("""
+            SELECT product_id, quantity 
+            FROM invoice_items 
+            WHERE invoice_id = %s AND product_id IS NOT NULL
+        """, (invoice_id,))
+        old_items = cursor.fetchall()
+        
+        # Restore quantities for old items
+        for old_item in old_items:
+            old_product_id = old_item[0]
+            old_quantity = old_item[1]
+            if old_product_id and old_quantity:
+                cursor.execute("""
+                    UPDATE products 
+                    SET quantity = quantity + %s 
+                    WHERE id = %s AND user_id = %s
+                """, (old_quantity, old_product_id, session['user_id']))
+        
         # Delete old items
         cursor.execute("DELETE FROM invoice_items WHERE invoice_id = %s", (invoice_id,))
         
-        # Insert new items
+        # Insert new items and update product inventory
         items = data.get('items', [])
         if items:
             for item in items:
+                product_id = item.get('product_id')
+                quantity = float(item.get('quantity', 0))
+                
+                # Validate quantity if product is selected
+                if product_id and quantity > 0:
+                    cursor.execute("""
+                        SELECT quantity FROM products 
+                        WHERE id = %s AND user_id = %s
+                    """, (product_id, session['user_id']))
+                    product = cursor.fetchone()
+                    if product:
+                        available_quantity = float(product[0])
+                        if quantity > available_quantity:
+                            connection.rollback()
+                            cursor.close()
+                            connection.close()
+                            return jsonify({
+                                'error': f'Insufficient quantity. Available: {available_quantity}, Requested: {quantity}'
+                            }), 400
+                
                 cursor.execute("""
-                INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, total_price, sac_code, tax_rate)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, total_price, sac_code, tax_rate, product_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     invoice_id,
                     item.get('description', ''),
-                    item.get('quantity', 0),
+                    quantity,
                     item.get('unit_price', 0),
-                    item.get('quantity', 0) * item.get('unit_price', 0),
-                    item.get('sac_code', '998313'),
-                    item.get('tax_rate', 18)
+                    quantity * item.get('unit_price', 0),
+                    item.get('sac_code') or '998313',  # Use provided sac_code or default
+                    item.get('tax_rate', 18),
+                    product_id
                 ))
+                
+                # If product_id is provided, deduct quantity from inventory
+                if product_id and quantity > 0:
+                    cursor.execute("""
+                        UPDATE products 
+                        SET quantity = quantity - %s 
+                        WHERE id = %s AND user_id = %s
+                    """, (quantity, product_id, session['user_id']))
         
         # Update bank details if provided
         if data.get('account_number') or data.get('ifsc_code') or data.get('bank_name') or data.get('upi_id'):
@@ -5953,6 +6953,305 @@ def download_expense_invoice_file(invoice_id):
     except Exception as e:
         print(f"Error downloading expense invoice file: {e}")
         return jsonify({'error': str(e)}), 500
+
+# ==================== PRODUCT INVENTORY API ENDPOINTS ====================
+
+@app.route('/api/products', methods=['GET'])
+@login_required
+def get_products():
+    """Get all products for the current user"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        
+        # Get search and filter parameters
+        search = request.args.get('search', '')
+        status = request.args.get('status', 'all')
+        
+        query = "SELECT * FROM products WHERE user_id = %s"
+        params = [session['user_id']]
+        
+        if search:
+            query += " AND (product_name LIKE %s OR product_code LIKE %s OR description LIKE %s)"
+            search_param = f"%{search}%"
+            params.extend([search_param, search_param, search_param])
+        
+        if status != 'all':
+            query += " AND status = %s"
+            params.append(status)
+        
+        query += " ORDER BY created_at DESC"
+        
+        cursor.execute(query, params)
+        products = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify(products)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/products', methods=['POST'])
+@login_required
+def create_product():
+    """Create a new product"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'error': 'User not logged in'}), 401
+        
+        data = request.get_json()
+        
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        
+        # Insert product
+        cursor.execute("""
+            INSERT INTO products (user_id, product_name, product_code, description, quantity, 
+                                unit_price, sac_code, cost_price, category, sku, unit, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            session['user_id'],
+            data.get('product_name'),
+            data.get('product_code'),
+            data.get('description'),
+            float(data.get('quantity', 0)),
+            float(data.get('unit_price', 0)),
+            data.get('sac_code', '998313'),
+            float(data.get('cost_price', 0)),
+            data.get('category'),
+            data.get('sku'),
+            data.get('unit', 'pcs'),
+            data.get('status', 'active')
+        ))
+        
+        product_id = cursor.lastrowid
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'id': product_id, 'message': 'Product created successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/products/<int:product_id>', methods=['GET'])
+@login_required
+def get_product(product_id):
+    """Get a specific product"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM products WHERE id = %s AND user_id = %s", (product_id, session['user_id']))
+        product = cursor.fetchone()
+        
+        cursor.close()
+        connection.close()
+        
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+        
+        return jsonify(product)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/products/<int:product_id>', methods=['PUT'])
+@login_required
+def update_product(product_id):
+    """Update a product"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'error': 'User not logged in'}), 401
+        
+        data = request.get_json()
+        
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        
+        # Check if product exists and belongs to user
+        cursor.execute("SELECT id FROM products WHERE id = %s AND user_id = %s", (product_id, session['user_id']))
+        if not cursor.fetchone():
+            cursor.close()
+            connection.close()
+            return jsonify({'error': 'Product not found'}), 404
+        
+        # Update product
+        cursor.execute("""
+            UPDATE products 
+            SET product_name = %s, product_code = %s, description = %s, quantity = %s,
+                unit_price = %s, sac_code = %s, cost_price = %s, category = %s, sku = %s, unit = %s, status = %s
+            WHERE id = %s AND user_id = %s
+        """, (
+            data.get('product_name'),
+            data.get('product_code'),
+            data.get('description'),
+            float(data.get('quantity', 0)),
+            float(data.get('unit_price', 0)),
+            data.get('sac_code', '998313'),
+            float(data.get('cost_price', 0)),
+            data.get('category'),
+            data.get('sku'),
+            data.get('unit', 'pcs'),
+            data.get('status', 'active'),
+            product_id,
+            session['user_id']
+        ))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Product updated successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/products/<int:product_id>', methods=['DELETE'])
+@login_required
+def delete_product(product_id):
+    """Delete a product"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        
+        # Check if product exists and belongs to user
+        cursor.execute("SELECT id FROM products WHERE id = %s AND user_id = %s", (product_id, session['user_id']))
+        if not cursor.fetchone():
+            cursor.close()
+            connection.close()
+            return jsonify({'error': 'Product not found'}), 404
+        
+        # Delete product
+        cursor.execute("DELETE FROM products WHERE id = %s AND user_id = %s", (product_id, session['user_id']))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Product deleted successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/products/low-stock', methods=['GET'])
+@login_required
+def get_low_stock_products():
+    """Get products with low stock"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        
+        # Get user's low stock threshold - handle case where column might not exist
+        threshold = 5  # Default threshold
+        try:
+            # First check if the column exists
+            cursor.execute("SHOW COLUMNS FROM user_settings LIKE 'low_stock_threshold'")
+            column_exists = cursor.fetchone()
+            
+            if column_exists:
+                cursor.execute("SELECT low_stock_threshold FROM user_settings WHERE user_id = %s", (session['user_id'],))
+                setting = cursor.fetchone()
+                if setting and setting.get('low_stock_threshold') is not None:
+                    threshold = int(setting['low_stock_threshold'])
+            else:
+                # Column doesn't exist, try to add it
+                try:
+                    cursor.execute("ALTER TABLE user_settings ADD COLUMN low_stock_threshold INT DEFAULT 5")
+                    connection.commit()
+                    print("Added low_stock_threshold column to user_settings table")
+                except Exception as alter_error:
+                    print(f"Could not add low_stock_threshold column: {alter_error}")
+                    # Continue with default value
+        except Exception as e:
+            print(f"Error checking low_stock_threshold: {e}")
+            # Continue with default value of 5
+        
+        # Get products with quantity below threshold
+        cursor.execute("""
+            SELECT * FROM products 
+            WHERE user_id = %s AND quantity <= %s AND status = 'active'
+            ORDER BY quantity ASC
+        """, (session['user_id'], threshold))
+        
+        products = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'products': products, 'threshold': threshold})
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error in get_low_stock_products: {e}")
+        print(f"Traceback: {error_trace}")
+        return jsonify({'error': str(e), 'traceback': error_trace}), 500
+
+@app.route('/api/settings/low-stock-threshold', methods=['GET'])
+@login_required
+def get_low_stock_threshold():
+    """Get low stock threshold setting"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT low_stock_threshold FROM user_settings WHERE user_id = %s", (session['user_id'],))
+        setting = cursor.fetchone()
+        
+        cursor.close()
+        connection.close()
+        
+        threshold = setting['low_stock_threshold'] if setting else 5
+        return jsonify({'threshold': threshold})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/low-stock-threshold', methods=['POST'])
+@login_required
+def update_low_stock_threshold():
+    """Update low stock threshold setting"""
+    try:
+        data = request.get_json()
+        threshold = int(data.get('threshold', 5))
+        
+        if threshold < 0:
+            return jsonify({'error': 'Threshold must be a positive number'}), 400
+        
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor()
+        
+        # Insert or update user settings
+        cursor.execute("""
+            INSERT INTO user_settings (user_id, low_stock_threshold)
+            VALUES (%s, %s)
+            ON DUPLICATE KEY UPDATE low_stock_threshold = %s
+        """, (session['user_id'], threshold, threshold))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'threshold': threshold, 'message': 'Low stock threshold updated successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 # User Bank Management API Endpoints
 @app.route('/api/user-banks', methods=['GET'])
@@ -8338,6 +9637,53 @@ def update_cash_balance_transaction(amount, transaction_type, user_id):
         return False
 
 
+# Get payment details for an EMI
+@app.route('/api/banking/emis/<int:emi_id>/payment', methods=['GET'])
+@login_required
+def get_emi_payment(emi_id):
+    """Get payment details for a specific EMI"""
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        
+        # Get the most recent payment for this EMI
+        cursor.execute("""
+            SELECT p.*, d.debt_code, c.name as customer_name, e.installment_number, e.amount as emi_amount
+            FROM debt_payments p
+            LEFT JOIN debts d ON p.debt_id = d.id
+            LEFT JOIN customers c ON p.customer_id = c.id
+            LEFT JOIN emis e ON p.emi_id = e.id
+            WHERE p.emi_id = %s AND p.user_id = %s
+            ORDER BY p.payment_date DESC, p.created_at DESC
+            LIMIT 1
+        """, (emi_id, session['user_id']))
+        
+        payment = cursor.fetchone()
+        
+        if not payment:
+            return jsonify({'error': 'Payment not found for this EMI'}), 404
+        
+        # Format dates
+        if payment['payment_date']:
+            payment['payment_date'] = payment['payment_date'].isoformat()
+        if payment.get('created_at'):
+            payment['created_at'] = payment['created_at'].isoformat()
+        
+        payment['amount'] = float(payment['amount'])
+        if payment.get('emi_amount'):
+            payment['emi_amount'] = float(payment['emi_amount'])
+        
+        cursor.close()
+        connection.close()
+        return jsonify(payment)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 # Payment Receipt Generation
 @app.route('/api/receipt/<transaction_type>/<int:transaction_id>')
 @login_required
@@ -8351,7 +9697,51 @@ def generate_payment_receipt(transaction_type, transaction_id):
         cursor = connection.cursor(dictionary=True)
         
         # Get transaction details based on type
-        if transaction_type == 'expense':
+        if transaction_type == 'emi':
+            # Get EMI payment details
+            cursor.execute("""
+                SELECT p.*, d.debt_code, c.name as customer_name, e.installment_number, e.amount as emi_amount,
+                       ba.bank_name, ba.account_number, u.username
+                FROM debt_payments p
+                LEFT JOIN debts d ON p.debt_id = d.id
+                LEFT JOIN customers c ON p.customer_id = c.id
+                LEFT JOIN emis e ON p.emi_id = e.id
+                LEFT JOIN bank_accounts ba ON p.bank_account_id = ba.id
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.emi_id = %s AND p.user_id = %s
+                ORDER BY p.payment_date DESC, p.created_at DESC
+                LIMIT 1
+            """, (transaction_id, session['user_id']))
+            
+            payment = cursor.fetchone()
+            
+            if not payment:
+                return jsonify({'error': 'EMI payment not found'}), 404
+            
+            # Prepare receipt data
+            receipt_data = {
+                'receipt_number': payment.get('receipt_number', f"EMI-{transaction_id:06d}"),
+                'unique_id': payment.get('transaction_id', 'N/A'),
+                'transaction_date': payment.get('payment_date', 'N/A'),
+                'transaction_type': 'EMI Payment',
+                'transaction_type_display': 'EMI PAYMENT',
+                'transaction_type_class': 'credit',
+                'payment_method': payment.get('payment_method', 'Cash'),
+                'bank_account': f"{payment.get('bank_name', 'Cash')} - {payment.get('account_number', '')}" if payment.get('bank_name') else 'Cash',
+                'category': 'EMI Payment',
+                'status': 'Completed',
+                'title': f"EMI Payment - {payment.get('debt_code', 'N/A')}",
+                'purpose': f"EMI Payment for {payment.get('customer_name', 'N/A')} - Installment #{payment.get('installment_number', 'N/A')}",
+                'customer_name': payment.get('customer_name', 'N/A'),
+                'debt_code': payment.get('debt_code', 'N/A'),
+                'installment_number': payment.get('installment_number', 'N/A'),
+                'emi_amount': f"{float(payment.get('emi_amount', 0)):,.2f}",
+                'amount': f"{float(payment.get('amount', 0)):,.2f}",
+                'remarks': payment.get('remarks', ''),
+                'generated_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+        elif transaction_type == 'expense':
             cursor.execute("""
                 SELECT e.*, ba.bank_name, ba.account_number
                 FROM expenses e
@@ -13542,6 +14932,203 @@ def update_invoices_table_for_sub_users():
         print(f"Error updating invoices table: {e}")
         return False
 
+def create_debt_management_tables():
+    """Create debt management tables if they don't exist"""
+    try:
+        print("Creating debt management tables...")
+        connection = get_db_connection()
+        if not connection:
+            print("Failed to get database connection for debt management tables")
+            return False
+        
+        cursor = connection.cursor()
+        
+        # Create customers table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS `customers` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `user_id` int(11) NOT NULL,
+              `customer_code` varchar(50) DEFAULT NULL,
+              `name` varchar(255) NOT NULL,
+              `phone` varchar(20) DEFAULT NULL,
+              `email` varchar(255) DEFAULT NULL,
+              `address` text DEFAULT NULL,
+              `city` varchar(100) DEFAULT NULL,
+              `state` varchar(100) DEFAULT NULL,
+              `pincode` varchar(10) DEFAULT NULL,
+              `pan_number` varchar(20) DEFAULT NULL,
+              `aadhar_number` varchar(20) DEFAULT NULL,
+              `status` enum('active','inactive') DEFAULT 'active',
+              `notes` text DEFAULT NULL,
+              `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+              `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+              PRIMARY KEY (`id`),
+              KEY `idx_user_id` (`user_id`),
+              KEY `idx_customer_code` (`customer_code`),
+              KEY `idx_status` (`status`),
+              KEY `idx_name` (`name`),
+              FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+        """)
+        
+        # Create debts table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS `debts` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `user_id` int(11) NOT NULL,
+              `customer_id` int(11) NOT NULL,
+              `debt_code` varchar(50) DEFAULT NULL,
+              `total_amount` decimal(15,2) NOT NULL DEFAULT 0.00,
+              `paid_amount` decimal(15,2) NOT NULL DEFAULT 0.00,
+              `balance` decimal(15,2) NOT NULL DEFAULT 0.00,
+              `interest_rate` decimal(5,2) DEFAULT 0.00,
+              `due_date` date DEFAULT NULL,
+              `start_date` date NOT NULL,
+              `status` enum('active','overdue','settled','cancelled') DEFAULT 'active',
+              `loan_purpose` text DEFAULT NULL,
+              `notes` text DEFAULT NULL,
+              `emi_enabled` tinyint(1) DEFAULT 0,
+              `emi_count` int(11) DEFAULT 0,
+              `emi_amount` decimal(15,2) DEFAULT 0.00,
+              `product_id` int(11) DEFAULT NULL,
+              `transaction_id` int(11) DEFAULT NULL,
+              `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+              `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+              PRIMARY KEY (`id`),
+              KEY `idx_user_id` (`user_id`),
+              KEY `idx_customer_id` (`customer_id`),
+              KEY `idx_debt_code` (`debt_code`),
+              KEY `idx_status` (`status`),
+              KEY `idx_due_date` (`due_date`),
+              FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+              FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+        """)
+        
+        # Create emis table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS `emis` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `debt_id` int(11) NOT NULL,
+              `customer_id` int(11) NOT NULL,
+              `user_id` int(11) NOT NULL,
+              `installment_number` int(11) NOT NULL,
+              `due_date` date NOT NULL,
+              `amount` decimal(15,2) NOT NULL DEFAULT 0.00,
+              `paid_amount` decimal(15,2) NOT NULL DEFAULT 0.00,
+              `status` enum('pending','paid','overdue','partial') DEFAULT 'pending',
+              `paid_date` date DEFAULT NULL,
+              `late_fee` decimal(15,2) DEFAULT 0.00,
+              `notes` text DEFAULT NULL,
+              `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+              `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+              PRIMARY KEY (`id`),
+              KEY `idx_debt_id` (`debt_id`),
+              KEY `idx_customer_id` (`customer_id`),
+              KEY `idx_user_id` (`user_id`),
+              KEY `idx_due_date` (`due_date`),
+              KEY `idx_status` (`status`),
+              FOREIGN KEY (`debt_id`) REFERENCES `debts` (`id`) ON DELETE CASCADE,
+              FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE,
+              FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+        """)
+        
+        # Create debt_payments table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS `debt_payments` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `debt_id` int(11) NOT NULL,
+              `customer_id` int(11) NOT NULL,
+              `user_id` int(11) NOT NULL,
+              `emi_id` int(11) DEFAULT NULL,
+              `amount` decimal(15,2) NOT NULL DEFAULT 0.00,
+              `payment_method` enum('cash','upi','bank','card','cheque','other') DEFAULT 'cash',
+              `payment_date` date NOT NULL,
+              `transaction_id` varchar(255) DEFAULT NULL,
+              `bank_account_id` int(11) DEFAULT NULL,
+              `receipt_number` varchar(50) DEFAULT NULL,
+              `remarks` text DEFAULT NULL,
+              `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+              `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+              PRIMARY KEY (`id`),
+              KEY `idx_debt_id` (`debt_id`),
+              KEY `idx_customer_id` (`customer_id`),
+              KEY `idx_user_id` (`user_id`),
+              KEY `idx_emi_id` (`emi_id`),
+              KEY `idx_payment_date` (`payment_date`),
+              KEY `idx_receipt_number` (`receipt_number`),
+              FOREIGN KEY (`debt_id`) REFERENCES `debts` (`id`) ON DELETE CASCADE,
+              FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE,
+              FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+              FOREIGN KEY (`emi_id`) REFERENCES `emis` (`id`) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+        """)
+        
+        # Create debt_reminders table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS `debt_reminders` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `debt_id` int(11) NOT NULL,
+              `customer_id` int(11) NOT NULL,
+              `user_id` int(11) NOT NULL,
+              `emi_id` int(11) DEFAULT NULL,
+              `reminder_type` enum('upcoming_due','due_today','overdue','manual') DEFAULT 'upcoming_due',
+              `scheduled_date` date NOT NULL,
+              `sent_date` datetime DEFAULT NULL,
+              `sent` tinyint(1) DEFAULT 0,
+              `channel` enum('email','sms','whatsapp','in_app') DEFAULT 'in_app',
+              `message` text DEFAULT NULL,
+              `subject` varchar(255) DEFAULT NULL,
+              `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+              `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+              PRIMARY KEY (`id`),
+              KEY `idx_debt_id` (`debt_id`),
+              KEY `idx_customer_id` (`customer_id`),
+              KEY `idx_user_id` (`user_id`),
+              KEY `idx_emi_id` (`emi_id`),
+              KEY `idx_scheduled_date` (`scheduled_date`),
+              KEY `idx_sent` (`sent`),
+              KEY `idx_reminder_type` (`reminder_type`),
+              FOREIGN KEY (`debt_id`) REFERENCES `debts` (`id`) ON DELETE CASCADE,
+              FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE,
+              FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+              FOREIGN KEY (`emi_id`) REFERENCES `emis` (`id`) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+        """)
+        
+        # Create debt_settings table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS `debt_settings` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `user_id` int(11) NOT NULL,
+              `reminder_days_before` varchar(50) DEFAULT '3,1,0',
+              `notification_channels` varchar(100) DEFAULT 'in_app,email',
+              `default_emi_max_installments` int(11) DEFAULT 12,
+              `grace_period_days` int(11) DEFAULT 0,
+              `late_fee_percentage` decimal(5,2) DEFAULT 0.00,
+              `auto_reminder_enabled` tinyint(1) DEFAULT 1,
+              `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+              `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+              PRIMARY KEY (`id`),
+              UNIQUE KEY `unique_user_debt_settings` (`user_id`),
+              FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+        """)
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        print("✓ Debt management tables created successfully")
+        return True
+    except Exception as e:
+        print(f"Error creating debt management tables: {e}")
+        import traceback
+        traceback.print_exc()
+        if 'connection' in locals():
+            connection.close()
+        return False
+
 if __name__ == '__main__':
     # Create sub users table on startup
     create_sub_users_table()
@@ -13557,6 +15144,9 @@ if __name__ == '__main__':
     
     # Update invoices table with enhanced fields
     update_invoices_table_for_enhanced_fields()
+    
+    # Create debt management tables
+    create_debt_management_tables()
     
     port = int(os.environ.get('PORT', 5000))
     

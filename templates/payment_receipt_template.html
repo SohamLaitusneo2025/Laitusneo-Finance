@@ -271,6 +271,36 @@
                 <span class="detail-value" id="invoiceNumber">{{ invoice_number }}</span>
             </div>
             {% endif %}
+            {% if customer_name %}
+            <div class="detail-row">
+                <span class="detail-label">Customer:</span>
+                <span class="detail-value" id="customerName">{{ customer_name }}</span>
+            </div>
+            {% endif %}
+            {% if debt_code %}
+            <div class="detail-row">
+                <span class="detail-label">Debt Code:</span>
+                <span class="detail-value" id="debtCode">{{ debt_code }}</span>
+            </div>
+            {% endif %}
+            {% if installment_number %}
+            <div class="detail-row">
+                <span class="detail-label">Installment #:</span>
+                <span class="detail-value" id="installmentNumber">{{ installment_number }}</span>
+            </div>
+            {% endif %}
+            {% if emi_amount %}
+            <div class="detail-row">
+                <span class="detail-label">EMI Amount:</span>
+                <span class="detail-value" id="emiAmount">Rs. {{ emi_amount }}</span>
+            </div>
+            {% endif %}
+            {% if remarks %}
+            <div class="detail-row">
+                <span class="detail-label">Remarks:</span>
+                <span class="detail-value" id="remarks">{{ remarks }}</span>
+            </div>
+            {% endif %}
         </div>
         
         <div class="amount-section">

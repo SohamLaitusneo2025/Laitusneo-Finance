@@ -340,6 +340,38 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Inventory Settings -->
+                    <div class="row g-4 mt-2">
+                        <div class="col-lg-12">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h5 class="chart-title">
+                                        <i class="fas fa-boxes me-2"></i>Inventory Settings
+                                    </h5>
+                                </div>
+                                <div class="chart-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="lowStockThreshold" class="form-label">
+                                                <i class="fas fa-exclamation-triangle text-warning me-1"></i>Low Stock Threshold
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="lowStockThreshold" min="0" value="5">
+                                                <span class="input-group-text">units</span>
+                                                <button class="btn btn-primary" onclick="saveLowStockThreshold()">
+                                                    <i class="fas fa-save me-1"></i>Save
+                                                </button>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                Products with quantity at or below this value will be marked as low stock and trigger notifications.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Data Management Tab -->
@@ -780,9 +812,10 @@
 // Bank Management Functions
 let banks = [];
 
-// Load banks on page load
+// Load banks and settings on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadBanks();
+    loadLowStockThreshold();
 });
 
 async function loadBanks() {
@@ -1131,6 +1164,48 @@ document.getElementById('confirmDeleteAccount').addEventListener('click', async 
         ExpenseTracker.showNotification('Error deleting account: ' + (error.response?.data?.error || error.message), 'error');
     }
 });
+
+// Low Stock Threshold Functions
+async function loadLowStockThreshold() {
+    try {
+        const response = await fetch('/api/settings/low-stock-threshold');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('lowStockThreshold').value = data.threshold || 5;
+        }
+    } catch (error) {
+        console.error('Error loading low stock threshold:', error);
+    }
+}
+
+async function saveLowStockThreshold() {
+    try {
+        const threshold = parseInt(document.getElementById('lowStockThreshold').value);
+        
+        if (threshold < 0) {
+            showNotification('Threshold must be a positive number', 'error');
+            return;
+        }
+        
+        const response = await fetch('/api/settings/low-stock-threshold', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ threshold: threshold })
+        });
+        
+        if (response.ok) {
+            showNotification('Low stock threshold updated successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showNotification(error.error || 'Failed to update threshold', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving threshold:', error);
+        showNotification('Failed to update threshold', 'error');
+    }
+}
 
 // Export data functionality
 async function exportData(format) {
